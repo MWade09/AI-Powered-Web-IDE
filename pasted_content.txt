@@ -1,0 +1,129 @@
+**Prompt for Manus/OpenManus: Create a World-Class Live Preview Text Editor with OpenRouter API Integration**
+
+You are an elite full-stack developer with expertise in modern web development, API integrations, and cutting-edge UI/UX design. Your mission is to build a live preview text editor with OpenRouter API integration, delivering a professional, deployable web application that rivals the best in the world. The editor should feature real-time interactivity, a futuristic aesthetic, and a robust development environment with full code control, avoiding beginner-oriented limitations. Fix a previous OpenRouter API integration that broke the editor, ensuring seamless functionality, and incorporate advanced features to make the project stand out. Follow these instructions to deliver a complete, polished solution.
+
+**Project Specifications**:
+1. **Core Functionality**:
+   - Build a web-based text editor with a split-pane interface:
+     - Left pane: A textarea for user input (plain text or Markdown).
+     - Right pane: A div for real-time preview, rendering Markdown (e.g., **bold** as `<strong>`, *italic* as `<em>`, `code` as `<code>`, newlines as `<br>`).
+   - Include a button (“Enhance with AI”) to send the textarea content to the OpenRouter API, updating both panes with enhanced text (e.g., improved clarity, grammar, style).
+   - Add a dropdown to select OpenRouter models (e.g., `openrouter/qwen/qwen-2-7b-instruct:free`, `mistralai/mixtral-8x7b-instruct`) and an “Add Model” button to dynamically add new model IDs via user input.
+   - Implement real-time streaming for OpenRouter responses, displaying text incrementally in a typewriter-like effect.
+   - Add syntax highlighting for code blocks in the editor using Prism.js or a similar library.
+   - Provide export options to save content as Markdown (.md), HTML (.html), or PDF.
+2. **OpenRouter API Integration**:
+   - Use the OpenRouter API (`https://openrouter.ai/api/v1/chat/completions`) to enhance text.
+   - Securely store the API key in a `.env` file or environment variable (`OPENROUTER_API_KEY`).
+   - Implement streaming responses using Server-Sent Events (SSE) or WebSockets for real-time updates.
+   - Include comprehensive error handling for:
+     - 401 Unauthorized: Invalid API key or no credits.
+     - 429 Rate Limit: Exceeded quota for free models.
+     - Network errors: API downtime or CORS issues.
+     - JSON parsing errors: Malformed responses.
+   - Display errors in a debug panel (toggleable UI element) with user-friendly messages (e.g., “Invalid API key. Please check your OpenRouter account.”).
+   - Debug and fix issues from the previous integration, such as:
+     - Authentication failures: Verify key format and credits.
+     - Incorrect endpoints or model names: Use `/chat/completions` and valid models.
+     - UI breakage: Ensure async calls don’t disrupt event listeners or DOM updates.
+   - Track API usage (e.g., request count, model usage) in the debug panel to monitor rate limits.
+3. **Design Requirements**:
+   - Create a futuristic, dark-themed design inspired by a starry night sky:
+     - Gradient background: Dark blue (#1e3a8a) to deep purple (#7e22ce).
+     - Neon accents: Pink (#ec4899), blue (#60a5fa), and white (#ffffff) for buttons and highlights.
+     - Subtle glowing effects: Use CSS `box-shadow` and `filter: drop-shadow`.
+   - Add animations:
+     - Smooth transitions for button clicks and pane updates (e.g., `transition: all 0.3s ease`).
+     - 3D card effect for the editor and preview panes (e.g., `transform: perspective(1000px) rotateY(5deg)` on hover).
+     - Portal-like scrolling effect when loading API responses, inspired by itsdart.com (use GSAP or WebGL).
+   - Ensure responsive design for desktop and mobile using flexbox/grid and media queries.
+   - Style the textarea, preview pane, buttons, and dropdown with a sleek, modern aesthetic (e.g., rounded corners, glassmorphism, hover effects).
+   - Include a toggleable debug panel with a neon-bordered UI for error logs and API stats.
+4. **Development Environment**:
+   - Generate a complete project structure:
+     - `index.html`: Main HTML file.
+     - `styles.css`: CSS for styling.
+     - `script.js`: JavaScript for logic and API calls.
+     - `.env`: Template for API key storage.
+     - `README.md`: Detailed setup, running, and deployment instructions.
+     - `package.json`: For dependencies (e.g., `dotenv`, `live-server`, `prismjs`).
+   - Set up a local development server (e.g., `live-server` or Node.js Express) for testing.
+   - Ensure compatibility with a professional IDE (e.g., VS Code, Manus’s workspace) with debugging tools (e.g., browser DevTools, VS Code debugger).
+   - Provide commands to install dependencies (e.g., `npm install dotenv prismjs`).
+   - Include a `.gitignore` to exclude `.env` and `node_modules`.
+5. **Deployment**:
+   - Provide instructions to deploy to Vercel, Netlify, or GitHub Pages.
+   - Ensure the API key is securely handled (e.g., Vercel environment variables).
+   - Optimize assets (e.g., minify CSS/JS, compress images if any).
+6. **Debugging and Robustness**:
+   - Log all API requests/responses to the console and debug panel.
+   - Test with a placeholder API key and a free model (`openrouter/qwen/qwen-2-7b-instruct:free`).
+   - Implement retry logic for transient errors (e.g., 429 Rate Limit):
+     ```javascript
+     async function fetchWithRetry(url, options, retries = 3) {
+       for (let i = 0; i < retries; i++) {
+         try {
+           const response = await fetch(url, options);
+           if (response.ok) return response;
+           if (response.status === 429) await new Promise(resolve => setTimeout(resolve, 1000));
+         } catch (error) {
+           if (i === retries - 1) throw error;
+         }
+       }
+       throw new Error('Max retries reached');
+     }
+     ```
+   - Handle edge cases: Empty input, large texts (>10,000 characters), API downtime.
+   - Fix UI issues (e.g., ensure event listeners persist, prevent preview lag).
+7. **Code Control and Quality**:
+   - Deliver clean, modular, well-commented code organized into functions (e.g., `renderPreview`, `callOpenRouterAPI`).
+   - Use ES6+ features (e.g., async/await, arrow functions, destructuring).
+   - Avoid restrictive frameworks or beginner tools (e.g., no Replit-like constraints).
+   - Ensure easy modification (e.g., add new Markdown rules, change themes).
+   - Include JSDoc comments for key functions.
+8. **Integration with Portfolio**:
+   - Design the editor as a reusable component for integration with platforms like aiunveiled.io or Tech Frontier.
+   - Provide an API (e.g., `window.EditorAPI`) to embed the editor in other projects.
+
+**Output Requirements**:
+- Deliver the full project as files: `index.html`, `styles.css`, `script.js`, `.env`, `README.md`, `package.json`, `.gitignore`.
+- Include in `README.md`:
+  - Setup: Install Node.js, run `npm install`, add API key to `.env`.
+  - Local testing: `npx live-server` or `npm start`.
+  - Deployment: Steps for Vercel/Netlify, securing API key.
+  - Debugging: How to use the debug panel and console logs.
+  - Customization: Adding Markdown rules, changing themes.
+- Provide a sample API call and response (e.g., input: “Hello world”, output: “Greetings, universe!”).
+- Include a development log detailing:
+  - Steps to create the project.
+  - Debugging process for OpenRouter issues (e.g., fixed 401 by validating key).
+  - Design choices (e.g., why GSAP for animations).
+- Generate a mockup image of the editor’s UI (if Manus supports image generation), matching the dark gradient theme with neon accents.
+
+**System Instructions**:
+- Act as a senior full-stack developer with 10+ years of experience in JavaScript, APIs, and UI/UX.
+- Follow best practices: Semantic HTML, CSS custom properties, modular JavaScript, error handling.
+- Prioritize performance (e.g., debounce input events), scalability, and user experience.
+- Use OpenRouter’s documentation (`https://openrouter.ai/docs`) for accurate API usage.
+- Assume the previous integration failed due to common issues (401, 429, async errors) and proactively fix them.
+- If Manus’s environment has constraints (e.g., file size limits, no SSE support), adapt the solution (e.g., fallback to polling).
+- Draw inspiration from elite web apps (e.g., Notion, CodePen) for functionality and design.
+
+**Example Workflow**:
+1. Initialize the project with `npm init` and install dependencies.
+2. Create `index.html` with a split-pane layout and debug panel.
+3. Style with `styles.css` using gradients, neon effects, and animations.
+4. Implement `script.js` with live preview, API streaming, and syntax highlighting.
+5. Test locally with `live-server`, debugging API calls via console and panel.
+6. Deploy to Vercel, securing the API key.
+7. Generate `README.md` and development log.
+
+**Deliverables**:
+- Project files with comments and JSDoc.
+- `README.md` with setup, deployment, and customization guides.
+- Sample API call/response and mockup image (if possible).
+- Development log explaining the process, fixes, and design choices.
+
+**Note**: The previous OpenRouter integration caused issues (e.g., 401 errors, UI breakage). Diagnose and resolve these, testing with a free model to avoid credit issues. Prompt me to provide my OpenRouter API key securely. The project should integrate with my portfolio (e.g., aiunveiled.io, Tech Frontier) and reflect a futuristic aesthetic with animations.
+
+Begin the task now, delivering the complete solution with all files and documentation.

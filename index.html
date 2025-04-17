@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Web IDE with OpenRouter AI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="api-key-info.css">
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Advanced Web IDE with OpenRouter AI</h1>
+            
+            <div class="api-key-container">
+                <input type="password" id="api-key-input" placeholder="Enter your OpenRouter API key (optional)">
+                <button id="save-api-key" class="neon-btn">Save API Key</button>
+                <span id="api-key-status" class="status-indicator">No API Key Set</span>
+                <button id="show-api-info" class="icon-btn" title="API Key Information">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+            
+            <div class="controls">
+                <div class="mode-selection">
+                    <button id="chat-mode-btn" class="mode-btn active">
+                        <i class="fas fa-comments"></i> Chat Mode
+                    </button>
+                    <button id="agent-mode-btn" class="mode-btn">
+                        <i class="fas fa-robot"></i> Agent Mode
+                    </button>
+                </div>
+                
+                <div class="model-selection">
+                    <select id="model-selector" disabled>
+                        <option value="">Select AI Model</option>
+                        <option value="openrouter/qwen/qwen-2-7b-instruct:free">Qwen 2 7B (Free)</option>
+                        <option value="mistralai/mixtral-8x7b-instruct">Mixtral 8x7B</option>
+                        <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
+                        <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
+                    </select>
+                    <button id="add-model-btn" class="neon-btn" disabled>
+                        <i class="fas fa-plus"></i> Add Model
+                    </button>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="enhance-btn" class="neon-btn primary" disabled>
+                        <i class="fas fa-magic"></i> Enhance with AI
+                    </button>
+                    <div class="export-dropdown">
+                        <button id="export-btn" class="neon-btn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <div class="export-options">
+                            <button id="export-html" class="export-option">
+                                <i class="fab fa-html5"></i> HTML File
+                            </button>
+                            <button id="export-css" class="export-option">
+                                <i class="fab fa-css3-alt"></i> CSS File
+                            </button>
+                            <button id="export-js" class="export-option">
+                                <i class="fab fa-js"></i> JS File
+                            </button>
+                            <button id="export-zip" class="export-option">
+                                <i class="fas fa-file-archive"></i> All Files (ZIP)
+                            </button>
+                        </div>
+                    </div>
+                    <button id="debug-toggle" class="neon-btn">
+                        <i class="fas fa-bug"></i> Debug Panel
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <!-- IDE Section -->
+            <div id="ide-section" class="ide-section">
+                <div class="tab-controls">
+                    <button id="html-tab" class="editor-tab active">
+                        <i class="fab fa-html5"></i> HTML
+                    </button>
+                    <button id="css-tab" class="editor-tab">
+                        <i class="fab fa-css3-alt"></i> CSS
+                    </button>
+                    <button id="js-tab" class="editor-tab">
+                        <i class="fab fa-js"></i> JavaScript
+                    </button>
+                </div>
+                
+                <div class="editor-container">
+                    <div class="pane editor-pane">
+                        <div id="html-editor" class="code-editor active">
+                            <textarea id="html-code" placeholder="Enter your HTML code here..."></textarea>
+                        </div>
+                        <div id="css-editor" class="code-editor">
+                            <textarea id="css-code" placeholder="Enter your CSS code here..."></textarea>
+                        </div>
+                        <div id="js-editor" class="code-editor">
+                            <textarea id="js-code" placeholder="Enter your JavaScript code here..."></textarea>
+                        </div>
+                    </div>
+                    <div class="pane preview-pane">
+                        <div class="preview-header">
+                            <span>Live Preview</span>
+                            <button id="refresh-preview" class="icon-btn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <iframe id="preview-frame" title="Preview"></iframe>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Section -->
+            <div id="chat-section" class="chat-section">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="system-message">
+                            <div class="message-content">
+                                Welcome to Chat Mode! Here you can discuss your code, ask questions, and get suggestions from the AI without directly modifying your code. When you're ready for direct code changes, switch to Agent Mode.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea id="chat-input" placeholder="Ask the AI about your code or request suggestions..."></textarea>
+                        <button id="send-chat" class="neon-btn primary" disabled>
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agent Mode Section (Hidden by default) -->
+            <div id="agent-section" class="agent-section hidden">
+                <div class="agent-container">
+                    <div class="agent-header">
+                        <h3>Agent Mode: Direct Code Modification</h3>
+                        <p>Describe what changes you want the AI to make to your code.</p>
+                    </div>
+                    <div class="agent-input-container">
+                        <textarea id="agent-input" placeholder="Describe the code changes you want (e.g., 'Add a responsive navigation menu to the HTML')"></textarea>
+                        <div class="agent-options">
+                            <select id="agent-target">
+                                <option value="all">All Files</option>
+                                <option value="html">HTML Only</option>
+                                <option value="css">CSS Only</option>
+                                <option value="js">JavaScript Only</option>
+                            </select>
+                            <button id="execute-agent" class="neon-btn primary" disabled>
+                                <i class="fas fa-robot"></i> Execute Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Explorer Section -->
+            <div class="file-explorer">
+                <div class="file-explorer-header">
+                    <h3>Project Files</h3>
+                    <div class="file-actions">
+                        <button id="download-file" class="icon-btn" title="Download Current File">
+                            <i class="fas fa-file-download"></i>
+                        </button>
+                        <button id="download-project" class="icon-btn" title="Download Project Folder">
+                            <i class="fas fa-folder-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="file-list">
+                    <div class="file html-file active">
+                        <i class="fab fa-html5"></i> index.html
+                    </div>
+                    <div class="file css-file">
+                        <i class="fab fa-css3-alt"></i> styles.css
+                    </div>
+                    <div class="file js-file">
+                        <i class="fab fa-js"></i> script.js
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debug Panel -->
+            <div id="debug-panel" class="debug-panel hidden">
+                <div class="debug-header">
+                    <h3>Debug Panel</h3>
+                    <button id="close-debug" class="icon-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="debug-tabs">
+                    <button class="debug-tab active" data-tab="logs">Logs</button>
+                    <button class="debug-tab" data-tab="stats">API Stats</button>
+                    <button class="debug-tab" data-tab="network">Network</button>
+                </div>
+                <div class="debug-content">
+                    <div id="debug-logs" class="debug-tab-content active">
+                        <div class="log-entry">Debug logs will appear here...</div>
+                    </div>
+                    <div id="debug-stats" class="debug-tab-content">
+                        <div class="stat-item">
+                            <span>API Key Status:</span>
+                            <span id="api-key-debug-status">Not Set</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Requests:</span>
+                            <span id="request-count">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Current Model:</span>
+                            <span id="current-model">None</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Last Response Time:</span>
+                            <span id="last-response-time">0ms</span>
+                        </div>
+                    </div>
+                    <div id="debug-network" class="debug-tab-content">
+                        <div class="network-item">No network activity yet</div>
+                    </div>
+                </div>
+                <button id="clear-logs" class="neon-btn small">Clear Logs</button>
+            </div>
+        </main>
+        
+        <!-- Modals -->
+        <div id="add-model-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Custom Model</h3>
+                    <button class="close-modal icon-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new-model-id">Model ID</label>
+                        <input type="text" id="new-model-id" placeholder="Enter model ID (e.g., openai/gpt-4)">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-model-name">Display Name</label>
+                        <input type="text" id="new-model-name" placeholder="Enter display name (e.g., GPT-4)">
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancel-add-model" class="neon-btn">Cancel</button>
+                    <button id="confirm-add-model" class="neon-btn primary">Add Model</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="api-key-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Welcome to Advanced Web IDE</h3>
+                </div>
+                <div class="modal-body">
+                    <p>To use AI features, please enter your OpenRouter API key.</p>
+                    <div class="form-group">
+                        <label for="modal-api-key">OpenRouter API Key</label>
+                        <input type="password" id="modal-api-key" placeholder="Enter your API key">
+                    </div>
+                    <p class="info-text">
+                        <i class="fas fa-info-circle"></i> You can get an API key by signing up at 
+                        <a href="https://openrouter.ai" target="_blank">OpenRouter.ai</a>
+                    </p>
+                    <div class="skip-notice">
+                        <p><strong>Note:</strong> You can skip this step and use the editor without AI features.</p>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="continue-without-key" class="neon-btn highlight-btn">
+                        <i class="fas fa-forward"></i> Skip & Continue Without AI
+                    </button>
+                    <button id="save-modal-api-key" class="neon-btn primary">Save API Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prism.js for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    
+    <!-- JSZip for export functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Main scripts -->
+    <script src="api-key-info.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

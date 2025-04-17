@@ -1,0 +1,25 @@
+.feature-list, .api-key-instructions ol {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-lg);
+}
+
+.api-key-instructions h4 {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  color: var(--accent-blue);
+}
+
+#api-info-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+#show-api-info {
+  margin-left: var(--spacing-xs);
+  color: var(--accent-blue);
+}
+
+#show-api-info:hover {
+  color: var(--accent-pink);
+}
