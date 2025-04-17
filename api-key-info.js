@@ -36,7 +36,7 @@ function showApiKeyInfo() {
                     </div>
                 </div>
                 <div class="modal-buttons">
-                    <button id="close-api-info" class="neon-btn">Got it!</button>
+                    <button id="close-api-info" class="btn">Got it!</button>
                 </div>
             </div>
         `;

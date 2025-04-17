@@ -102,6 +102,9 @@ function init() {
     apiKeyModal.classList.add('hidden');
     apiKeyModal.style.display = 'none';
     
+    // Make Agent Mode panel visible by default (remove hidden class)
+    agentSection.classList.remove('hidden');
+    
     // Set editor as fully functional without AI features
     updateApiKeyStatus(false);
     
@@ -190,6 +193,9 @@ function init() {
             modal.classList.add('hidden');
         });
     });
+    
+    // Set up keyboard shortcuts
+    setupKeyboardShortcuts();
 
     // Add sample code if editors are empty
     if (htmlEditor.value.trim() === '') {
@@ -303,6 +309,352 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add animation effects
     addAnimationEffects();
+
+    // Set up file explorer functionality
+    setupFileExplorer();
+}
+
+/**
+ * Set up file explorer functionality
+ */
+function setupFileExplorer() {
+    const fileList = document.querySelector('.file-list');
+    const contextMenu = document.getElementById('file-context-menu');
+    const newFileBtn = document.getElementById('new-file-btn');
+    
+    // File selection
+    fileList.addEventListener('click', (e) => {
+        const file = e.target.closest('.file');
+        if (!file) return;
+        
+        const fileType = file.dataset.type;
+        switchTab(fileType);
+    });
+    
+    // Multiple file selection with Ctrl/Cmd key
+    fileList.addEventListener('click', (e) => {
+        const file = e.target.closest('.file');
+        if (!file) return;
+        
+        if (e.ctrlKey || e.metaKey) {
+            // Toggle selection for Ctrl+click
+            file.classList.toggle('selected');
+        } else {
+            // Clear other selections if not using Ctrl/Cmd
+            document.querySelectorAll('.file.selected').forEach(f => {
+                if (f !== file) f.classList.remove('selected');
+            });
+        }
+    });
+    
+    // Context menu
+    fileList.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        
+        const file = e.target.closest('.file');
+        if (!file) return;
+        
+        // Position the context menu
+        const rect = file.getBoundingClientRect();
+        contextMenu.style.top = `${e.clientY}px`;
+        contextMenu.style.left = `${e.clientX}px`;
+        
+        // Store the target file for the menu actions
+        contextMenu.dataset.targetFile = file.dataset.file;
+        contextMenu.dataset.targetType = file.dataset.type;
+        
+        // Show the menu
+        contextMenu.classList.remove('hidden');
+        
+        // Make sure the target file is selected
+        if (!e.ctrlKey && !e.metaKey) {
+            document.querySelectorAll('.file.selected').forEach(f => 
+                f.classList.remove('selected'));
+        }
+        file.classList.add('selected');
+    });
+    
+    // Close context menu when clicking elsewhere
+    document.addEventListener('click', () => {
+        contextMenu.classList.add('hidden');
+    });
+    
+    // Context menu actions
+    contextMenu.addEventListener('click', (e) => {
+        const action = e.target.closest('.context-menu-item')?.dataset.action;
+        if (!action) return;
+        
+        const targetFile = contextMenu.dataset.targetFile;
+        const targetType = contextMenu.dataset.targetType;
+        
+        switch (action) {
+            case 'rename':
+                renameFile(targetFile, targetType);
+                break;
+            case 'duplicate':
+                duplicateFile(targetFile, targetType);
+                break;
+            case 'download':
+                downloadFileByName(targetFile, targetType);
+                break;
+            case 'delete':
+                deleteFile(targetFile, targetType);
+                break;
+        }
+        
+        // Hide the menu after action
+        contextMenu.classList.add('hidden');
+    });
+    
+    // New file button
+    newFileBtn.addEventListener('click', createNewFile);
+}
+
+/**
+ * Create a new file in the file explorer
+ */
+function createNewFile() {
+    // Show a modal to get the new file name
+    const fileName = prompt('Enter new file name (with extension):', 'new-file.js');
+    if (!fileName) return;
+    
+    // Determine file type
+    let fileType = 'js';
+    let iconClass = 'fa-js';
+    
+    if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+        fileType = 'html';
+        iconClass = 'fa-html5';
+    } else if (fileName.endsWith('.css')) {
+        fileType = 'css';
+        iconClass = 'fa-css3-alt';
+    } else if (!fileName.endsWith('.js')) {
+        if (!confirm('File doesn\'t have a recognized extension (.html, .css, .js). Continue anyway?')) {
+            return;
+        }
+    }
+    
+    // Create new DOM element for the file
+    const fileElement = document.createElement('div');
+    fileElement.className = `file ${fileType}-file`;
+    fileElement.dataset.file = fileName;
+    fileElement.dataset.type = fileType;
+    fileElement.innerHTML = `<i class="fab ${iconClass}"></i> ${fileName}`;
+    
+    // Add to file list
+    document.querySelector('.file-list').appendChild(fileElement);
+    
+    // Create blank content for the new file
+    if (fileType === 'html') {
+        createNewFileContent('html', fileName);
+    } else if (fileType === 'css') {
+        createNewFileContent('css', fileName);
+    } else {
+        createNewFileContent('js', fileName);
+    }
+    
+    logToDebug(`Created new file: ${fileName}`, 'success');
+}
+
+/**
+ * Create content for a new file
+ * @param {string} fileType - Type of file ('html', 'css', or 'js')
+ * @param {string} fileName - Name of the file
+ */
+function createNewFileContent(fileType, fileName) {
+    // In a full implementation, this would actually create separate content storage
+    // For now, we'll simulate creating new files with comments
+    const currentEditor = fileType === 'html' ? htmlEditor :
+                          fileType === 'css' ? cssEditor : jsEditor;
+    
+    const currentContent = currentEditor.value;
+    const timestamp = new Date().toLocaleString();
+    
+    // Add a comment indicating we've created a new file
+    currentEditor.value = `/* 
+* New file created: ${fileName}
+* Created on: ${timestamp}
+* Note: In this demo, file contents are simulated.
+* In a full implementation, each file would have separate storage.
+*/\n\n${currentContent}`;
+    
+    // Switch to the appropriate tab
+    switchTab(fileType);
+}
+
+/**
+ * Rename a file in the file explorer
+ * @param {string} fileName - Name of the file to rename
+ * @param {string} fileType - Type of file ('html', 'css', or 'js')
+ */
+function renameFile(fileName, fileType) {
+    const newName = prompt(`Rename ${fileName} to:`, fileName);
+    if (!newName || newName === fileName) return;
+    
+    // Find the file element
+    const fileElement = document.querySelector(`.file[data-file="${fileName}"]`);
+    if (!fileElement) return;
+    
+    // Determine new file type based on extension
+    let newType = fileType;
+    let iconClass = fileElement.querySelector('i').className;
+    
+    if (newName.endsWith('.html') || newName.endsWith('.htm')) {
+        newType = 'html';
+        iconClass = 'fab fa-html5';
+    } else if (newName.endsWith('.css')) {
+        newType = 'css';
+        iconClass = 'fab fa-css3-alt';
+    } else if (newName.endsWith('.js')) {
+        newType = 'js';
+        iconClass = 'fab fa-js';
+    }
+    
+    // Update file element
+    fileElement.dataset.file = newName;
+    fileElement.dataset.type = newType;
+    fileElement.innerHTML = `<i class="${iconClass}"></i> ${newName}`;
+    fileElement.className = `file ${newType}-file${fileElement.classList.contains('active') ? ' active' : ''}`;
+    
+    logToDebug(`Renamed ${fileName} to ${newName}`, 'success');
+}
+
+/**
+ * Duplicate a file in the file explorer
+ * @param {string} fileName - Name of the file to duplicate
+ * @param {string} fileType - Type of file ('html', 'css', or 'js')
+ */
+function duplicateFile(fileName, fileType) {
+    // Generate a copy name
+    const baseName = fileName.includes('.') ? 
+        fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+    const extension = fileName.includes('.') ? 
+        fileName.substring(fileName.lastIndexOf('.')) : '';
+    const newName = `${baseName}-copy${extension}`;
+    
+    // Create new DOM element for the file
+    const fileElement = document.createElement('div');
+    fileElement.className = `file ${fileType}-file`;
+    fileElement.dataset.file = newName;
+    fileElement.dataset.type = fileType;
+    
+    const iconClass = fileType === 'html' ? 'fa-html5' : 
+                     fileType === 'css' ? 'fa-css3-alt' : 'fa-js';
+    
+    fileElement.innerHTML = `<i class="fab ${iconClass}"></i> ${newName}`;
+    
+    // Add to file list
+    document.querySelector('.file-list').appendChild(fileElement);
+    
+    logToDebug(`Duplicated ${fileName} to ${newName}`, 'success');
+}
+
+/**
+ * Download a specific file by name
+ * @param {string} fileName - Name of the file to download
+ * @param {string} fileType - Type of file ('html', 'css', or 'js')
+ */
+function downloadFileByName(fileName, fileType) {
+    // Get content based on file type
+    const content = fileType === 'html' ? htmlEditor.value :
+                   fileType === 'css' ? cssEditor.value : jsEditor.value;
+    
+    // Determine content type
+    const contentType = fileType === 'html' ? 'text/html' :
+                       fileType === 'css' ? 'text/css' : 'text/javascript';
+    
+    // Download the file
+    downloadFile(fileName, content, contentType);
+}
+
+/**
+ * Delete a file from the file explorer
+ * @param {string} fileName - Name of the file to delete
+ * @param {string} fileType - Type of file ('html', 'css', or 'js')
+ */
+function deleteFile(fileName, fileType) {
+    // Prevent deleting the last file of a type
+    const filesOfType = document.querySelectorAll(`.file.${fileType}-file`);
+    if (filesOfType.length <= 1) {
+        alert(`Cannot delete the last ${fileType.toUpperCase()} file.`);
+        return;
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete ${fileName}?`)) {
+        return;
+    }
+    
+    // Find and remove the file element
+    const fileElement = document.querySelector(`.file[data-file="${fileName}"]`);
+    if (fileElement) {
+        // If the deleted file was active, activate another file of the same type
+        if (fileElement.classList.contains('active')) {
+            const otherFile = [...filesOfType].find(f => f !== fileElement);
+            if (otherFile) {
+                switchTab(fileType);
+                otherFile.classList.add('active');
+            }
+        }
+        
+        fileElement.remove();
+        logToDebug(`Deleted file: ${fileName}`, 'success');
+    }
+}
+
+/**
+ * Set up keyboard shortcuts for common actions
+ */
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Command key shortcuts
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key.toLowerCase()) {
+                case 's': // Save current file
+                    e.preventDefault();
+                    downloadCurrentFile();
+                    break;
+                case 'r': // Refresh preview
+                    e.preventDefault();
+                    updatePreview();
+                    break;
+                case 'e': // Enhance code
+                    e.preventDefault();
+                    enhanceCode();
+                    break;
+                case '1': // Switch to HTML tab
+                    e.preventDefault();
+                    switchTab('html');
+                    break;
+                case '2': // Switch to CSS tab
+                    e.preventDefault();
+                    switchTab('css');
+                    break;
+                case '3': // Switch to JS tab
+                    e.preventDefault();
+                    switchTab('js');
+                    break;
+            }
+        }
+        
+        // Alt key shortcuts
+        if (e.altKey) {
+            switch (e.key.toLowerCase()) {
+                case 'c': // Switch to Chat Mode
+                    e.preventDefault();
+                    switchMode('chat');
+                    break;
+                case 'a': // Switch to Agent Mode
+                    e.preventDefault();
+                    switchMode('agent');
+                    break;
+                case 'd': // Toggle Debug Panel
+                    e.preventDefault();
+                    toggleDebugPanel();
+                    break;
+            }
+        }
+    });
 }
 
 /**
@@ -441,6 +793,13 @@ function switchMode(mode) {
     // Update section visibility
     chatSection.classList.toggle('hidden', mode !== 'chat');
     agentSection.classList.toggle('hidden', mode !== 'agent');
+    
+    // Focus the appropriate input field
+    if (mode === 'chat') {
+        chatInput.focus();
+    } else {
+        agentInput.focus();
+    }
     
     logToDebug(`Switched to ${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode`, 'info');
 }
@@ -1059,9 +1418,22 @@ function addCustomModel() {
  * Toggle the debug panel
  */
 function toggleDebugPanel() {
-    debugPanel.classList.toggle('hidden');
-    if (!debugPanel.classList.contains('hidden')) {
+    const isHidden = debugPanel.classList.toggle('hidden');
+    
+    // Update the button text to reflect current state
+    if (isHidden) {
+        debugToggle.innerHTML = '<i class="fas fa-bug"></i> Debug Panel';
+        logToDebug('Debug panel closed', 'info');
+    } else {
+        debugToggle.innerHTML = '<i class="fas fa-times"></i> Close Debug';
         logToDebug('Debug panel opened', 'info');
+        
+        // Auto-refresh debug stats when opening
+        requestCountEl.textContent = apiStats.requestCount;
+        currentModel.textContent = apiStats.lastModel;
+        lastResponseTimeEl.textContent = `${apiStats.lastResponseTime}ms`;
+        apiKeyDebugStatus.textContent = apiKey ? 'Valid' : 'Not Set';
+        apiKeyDebugStatus.className = apiKey ? 'success' : '';
     }
 }
 

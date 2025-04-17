@@ -128,7 +128,6 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -295,6 +294,43 @@ main {
   height: 100%;
   border: none;
   background: white;
+  flex: 1;
+}
+
+/* Mode Panes Container */
+.mode-panes {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Chat Section */
+.chat-section {
+  height: 30vh;
+  min-height: 200px;
+  background: var(--surface-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Agent Section */
+.agent-section {
+  height: 30vh;
+  min-height: 200px;
+  background: var(--surface-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
   flex: 1;
 }
 
@@ -488,24 +524,25 @@ main {
 
 /* File Explorer */
 .file-explorer {
-  position: absolute;
-  top: 0;
-  right: -250px;
-  width: 230px;
-  height: 100%;
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
   background: var(--surface-secondary);
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: none;
-  transition: right var(--transition-normal);
-  z-index: 10;
+  transition: all var(--transition-normal);
+  z-index: 5;
+  margin-bottom: var(--spacing-lg);
+  max-height: 300px;
 }
 
+/* Remove hover behavior that was making the explorer slide out */
 .container:hover .file-explorer {
-  right: 0;
+  right: auto;
 }
 
 .file-explorer-header {
@@ -537,19 +574,35 @@ main {
   padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  position: relative; /* For selection indicator */
+  border-left: 3px solid transparent; /* For selection indicator */
 }
 
 .file:hover {
   background: rgba(255, 255, 255, 0.1);
+  transform: translateX(3px); /* Slight shift on hover */
 }
 
 .file.active {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(96, 165, 250, 0.2); /* Bright blue background */
   color: var(--accent-blue);
+  border-left: 3px solid var(--accent-blue); /* Blue indicator on left side */
+  font-weight: 600;
+}
+
+.file.selected {
+  background: rgba(236, 72, 153, 0.2); /* Pink background for selected */
+  color: var(--accent-pink);
+  border-left: 3px solid var(--accent-pink); /* Pink indicator on left side */
+}
+
+.file.active.selected {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.2), rgba(236, 72, 153, 0.2));
+  border-left: 3px solid var(--accent-white);
 }
 
 .html-file i {
@@ -584,13 +637,23 @@ button {
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
+  justify-content: center; /* Added for better alignment */
   gap: var(--spacing-xs);
+  min-width: 100px; /* Added for more consistent button sizes */
+  position: relative; /* Added to support visual feedback */
 }
 
 .neon-btn:hover, .neon-btn:focus {
   background: rgba(236, 72, 153, 0.2);
   box-shadow: var(--border-glow);
   transform: translateY(-2px);
+  color: var(--accent-white); /* Added for better contrast */
+}
+
+.neon-btn:active {
+  transform: translateY(1px); /* Added feedback for button press */
+  box-shadow: 0 0 3px rgba(236, 72, 153, 0.3); /* Reduced glow on active state */
+  transition-duration: 0.1s; /* Faster transition for active state */
 }
 
 .neon-btn.primary {
@@ -600,6 +663,13 @@ button {
 
 .neon-btn.primary:hover, .neon-btn.primary:focus {
   background: #f472b6;
+  color: #000000; /* Keep text dark on light background */
+  box-shadow: 0 0 15px rgba(236, 72, 153, 0.8); /* Enhanced glow */
+}
+
+.neon-btn.primary:active {
+  background: #ec4899; /* Original color on active state */
+  box-shadow: 0 0 5px rgba(236, 72, 153, 0.5); /* Reduced glow */
 }
 
 .neon-btn.highlight-btn {
@@ -611,26 +681,55 @@ button {
 
 .neon-btn.highlight-btn:hover, .neon-btn.highlight-btn:focus {
   background: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8); /* Enhanced green glow */
 }
 
-.skip-notice {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm);
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-sm);
-  border-left: 3px solid var(--accent-green);
+.neon-btn.highlight-btn:active {
+  background: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); /* Reduced glow */
 }
 
 .neon-btn.small {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 0.8rem;
+  min-width: 60px; /* Smaller min-width for small buttons */
 }
 
 .neon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+  transform: none !important; /* Prevent hover transform on disabled */
+  box-shadow: none !important; /* Prevent glow on disabled */
+}
+
+/* Added click feedback ripple effect */
+.neon-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.neon-btn:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0) translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20) translate(-50%, -50%);
+    opacity: 0;
+  }
 }
 
 .icon-btn {
@@ -644,11 +743,91 @@ button {
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+  position: relative; /* Added for ripple effect */
+  overflow: hidden; /* Contain ripple effect */
 }
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
+  transform: scale(1.1); /* Added subtle scale effect */
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+  transition-duration: 0.1s;
+}
+
+/* Ripple effect for icon buttons */
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.icon-btn:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* Basic button style that matches the screenshot */
+.btn {
+  background-color: rgba(96, 165, 250, 0.2);
+  color: var(--text-primary);
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 80px;
+  justify-content: center;
+}
+
+.btn:hover {
+  background-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+}
+
+.btn.primary {
+  background-color: rgba(236, 72, 153, 0.2);
+  border-color: var(--accent-pink);
+}
+
+.btn.primary:hover {
+  background-color: rgba(236, 72, 153, 0.4);
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.6);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Controls section styling */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.mode-buttons, .action-controls, .action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
 }
 
 /* Form Elements */
@@ -941,6 +1120,47 @@ select:disabled, input:disabled {
   100% {
     transform: translateX(100%);
   }
+}
+
+/* Context Menu Styling */
+.context-menu {
+  position: absolute;
+  z-index: 1000;
+  background: var(--surface-secondary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 160px;
+  backdrop-filter: blur(10px);
+}
+
+.context-menu-item {
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+.context-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.context-menu-item i {
+  width: 20px;
+  text-align: center;
+}
+
+.delete-item {
+  color: var(--error-red);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: var(--spacing-xs) 0;
 }
 
 /* Utility Classes */

@@ -20,7 +20,7 @@
             
             <div class="api-key-container">
                 <input type="password" id="api-key-input" placeholder="Enter your OpenRouter API key (optional)">
-                <button id="save-api-key" class="neon-btn">Save API Key</button>
+                <button id="save-api-key" class="btn">Save API Key</button>
                 <span id="api-key-status" class="status-indicator">No API Key Set</span>
                 <button id="show-api-info" class="icon-btn" title="API Key Information">
                     <i class="fas fa-info-circle"></i>
@@ -28,16 +28,16 @@
             </div>
             
             <div class="controls">
-                <div class="mode-selection">
-                    <button id="chat-mode-btn" class="mode-btn active">
+                <div class="mode-buttons">
+                    <button id="chat-mode-btn" class="mode-btn active" title="Chat Mode (Alt+C)">
                         <i class="fas fa-comments"></i> Chat Mode
                     </button>
-                    <button id="agent-mode-btn" class="mode-btn">
+                    <button id="agent-mode-btn" class="mode-btn" title="Agent Mode (Alt+A)">
                         <i class="fas fa-robot"></i> Agent Mode
                     </button>
                 </div>
                 
-                <div class="model-selection">
+                <div class="action-controls">
                     <select id="model-selector" disabled>
                         <option value="">Select AI Model</option>
                         <option value="openrouter/qwen/qwen-2-7b-instruct:free">Qwen 2 7B (Free)</option>
@@ -45,52 +45,79 @@
                         <option value="anthropic/claude-3-opus:beta">Claude 3 Opus</option>
                         <option value="anthropic/claude-3-sonnet:beta">Claude 3 Sonnet</option>
                     </select>
-                    <button id="add-model-btn" class="neon-btn" disabled>
-                        <i class="fas fa-plus"></i> Add Model
-                    </button>
                 </div>
                 
                 <div class="action-buttons">
-                    <button id="enhance-btn" class="neon-btn primary" disabled>
-                        <i class="fas fa-magic"></i> Enhance with AI
+                    <button id="enhance-btn" class="btn primary" disabled title="Enhance Code (Ctrl+E)">
+                        <i class="fas fa-magic"></i> Enhance
                     </button>
-                    <div class="export-dropdown">
-                        <button id="export-btn" class="neon-btn">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                        <div class="export-options">
-                            <button id="export-html" class="export-option">
-                                <i class="fab fa-html5"></i> HTML File
-                            </button>
-                            <button id="export-css" class="export-option">
-                                <i class="fab fa-css3-alt"></i> CSS File
-                            </button>
-                            <button id="export-js" class="export-option">
-                                <i class="fab fa-js"></i> JS File
-                            </button>
-                            <button id="export-zip" class="export-option">
-                                <i class="fas fa-file-archive"></i> All Files (ZIP)
-                            </button>
-                        </div>
-                    </div>
-                    <button id="debug-toggle" class="neon-btn">
-                        <i class="fas fa-bug"></i> Debug Panel
+                    <button id="export-btn" class="btn" title="Export Options">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button id="debug-toggle" class="btn">
+                        <i class="fas fa-bug"></i> Debug
                     </button>
                 </div>
             </div>
         </header>
         
         <main>
+            <!-- File Explorer Section - Moved to the top of the main content -->
+            <div class="file-explorer">
+                <div class="file-explorer-header">
+                    <h3>Project Files</h3>
+                    <div class="file-actions">
+                        <button id="new-file-btn" class="icon-btn" title="Create New File">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button id="download-file" class="icon-btn" title="Download Current File">
+                            <i class="fas fa-file-download"></i>
+                        </button>
+                        <button id="download-project" class="icon-btn" title="Download Project Folder">
+                            <i class="fas fa-folder-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="file-list">
+                    <div class="file html-file active" data-file="index.html" data-type="html">
+                        <i class="fab fa-html5"></i> index.html
+                    </div>
+                    <div class="file css-file" data-file="styles.css" data-type="css">
+                        <i class="fab fa-css3-alt"></i> styles.css
+                    </div>
+                    <div class="file js-file" data-file="script.js" data-type="js">
+                        <i class="fab fa-js"></i> script.js
+                    </div>
+                </div>
+                
+                <!-- Context Menu (Hidden by default) -->
+                <div id="file-context-menu" class="context-menu hidden">
+                    <div class="context-menu-item" data-action="rename">
+                        <i class="fas fa-edit"></i> Rename
+                    </div>
+                    <div class="context-menu-item" data-action="duplicate">
+                        <i class="fas fa-copy"></i> Duplicate
+                    </div>
+                    <div class="context-menu-item" data-action="download">
+                        <i class="fas fa-download"></i> Download
+                    </div>
+                    <div class="context-menu-separator"></div>
+                    <div class="context-menu-item delete-item" data-action="delete">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </div>
+                </div>
+            </div>
+            
             <!-- IDE Section -->
             <div id="ide-section" class="ide-section">
                 <div class="tab-controls">
-                    <button id="html-tab" class="editor-tab active">
+                    <button id="html-tab" class="editor-tab active" title="HTML (Ctrl+1)">
                         <i class="fab fa-html5"></i> HTML
                     </button>
-                    <button id="css-tab" class="editor-tab">
+                    <button id="css-tab" class="editor-tab" title="CSS (Ctrl+2)">
                         <i class="fab fa-css3-alt"></i> CSS
                     </button>
-                    <button id="js-tab" class="editor-tab">
+                    <button id="js-tab" class="editor-tab" title="JavaScript (Ctrl+3)">
                         <i class="fab fa-js"></i> JavaScript
                     </button>
                 </div>
@@ -110,7 +137,7 @@
                     <div class="pane preview-pane">
                         <div class="preview-header">
                             <span>Live Preview</span>
-                            <button id="refresh-preview" class="icon-btn">
+                            <button id="refresh-preview" class="icon-btn" title="Refresh Preview (Ctrl+R)">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
                         </div>
@@ -119,71 +146,48 @@
                 </div>
             </div>
             
-            <!-- Chat Section -->
-            <div id="chat-section" class="chat-section">
-                <div class="chat-container">
-                    <div class="chat-messages" id="chat-messages">
-                        <div class="system-message">
-                            <div class="message-content">
-                                Welcome to Chat Mode! Here you can discuss your code, ask questions, and get suggestions from the AI without directly modifying your code. When you're ready for direct code changes, switch to Agent Mode.
+            <!-- Dual Pane for Chat and Agent Modes -->
+            <div class="mode-panes">
+                <!-- Chat Section -->
+                <div id="chat-section" class="chat-section">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="system-message">
+                                <div class="message-content">
+                                    Welcome to Chat Mode! Here you can discuss your code, ask questions, and get suggestions from the AI without directly modifying your code. When you're ready for direct code changes, switch to Agent Mode.
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="chat-input-container">
-                        <textarea id="chat-input" placeholder="Ask the AI about your code or request suggestions..."></textarea>
-                        <button id="send-chat" class="neon-btn primary" disabled>
-                            <i class="fas fa-paper-plane"></i> Send
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Agent Mode Section (Hidden by default) -->
-            <div id="agent-section" class="agent-section hidden">
-                <div class="agent-container">
-                    <div class="agent-header">
-                        <h3>Agent Mode: Direct Code Modification</h3>
-                        <p>Describe what changes you want the AI to make to your code.</p>
-                    </div>
-                    <div class="agent-input-container">
-                        <textarea id="agent-input" placeholder="Describe the code changes you want (e.g., 'Add a responsive navigation menu to the HTML')"></textarea>
-                        <div class="agent-options">
-                            <select id="agent-target">
-                                <option value="all">All Files</option>
-                                <option value="html">HTML Only</option>
-                                <option value="css">CSS Only</option>
-                                <option value="js">JavaScript Only</option>
-                            </select>
-                            <button id="execute-agent" class="neon-btn primary" disabled>
-                                <i class="fas fa-robot"></i> Execute Changes
+                        <div class="chat-input-container">
+                            <textarea id="chat-input" placeholder="Ask the AI about your code or request suggestions..."></textarea>
+                            <button id="send-chat" class="btn primary" disabled>
+                                <i class="fas fa-paper-plane"></i> Send
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- File Explorer Section -->
-            <div class="file-explorer">
-                <div class="file-explorer-header">
-                    <h3>Project Files</h3>
-                    <div class="file-actions">
-                        <button id="download-file" class="icon-btn" title="Download Current File">
-                            <i class="fas fa-file-download"></i>
-                        </button>
-                        <button id="download-project" class="icon-btn" title="Download Project Folder">
-                            <i class="fas fa-folder-download"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="file-list">
-                    <div class="file html-file active">
-                        <i class="fab fa-html5"></i> index.html
-                    </div>
-                    <div class="file css-file">
-                        <i class="fab fa-css3-alt"></i> styles.css
-                    </div>
-                    <div class="file js-file">
-                        <i class="fab fa-js"></i> script.js
+                
+                <!-- Agent Mode Section -->
+                <div id="agent-section" class="agent-section">
+                    <div class="agent-container">
+                        <div class="agent-header">
+                            <h3>Agent Mode: Direct Code Modification</h3>
+                            <p>Describe what changes you want the AI to make to your code.</p>
+                        </div>
+                        <div class="agent-input-container">
+                            <textarea id="agent-input" placeholder="Describe the code changes you want (e.g., 'Add a responsive navigation menu to the HTML')"></textarea>
+                            <div class="agent-options">
+                                <select id="agent-target">
+                                    <option value="all">All Files</option>
+                                    <option value="html">HTML Only</option>
+                                    <option value="css">CSS Only</option>
+                                    <option value="js">JavaScript Only</option>
+                                </select>
+                                <button id="execute-agent" class="btn primary" disabled>
+                                    <i class="fas fa-robot"></i> Execute Changes
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,8 +255,8 @@
                     </div>
                 </div>
                 <div class="modal-buttons">
-                    <button id="cancel-add-model" class="neon-btn">Cancel</button>
-                    <button id="confirm-add-model" class="neon-btn primary">Add Model</button>
+                    <button id="cancel-add-model" class="btn">Cancel</button>
+                    <button id="confirm-add-model" class="btn primary">Add Model</button>
                 </div>
             </div>
         </div>
@@ -277,10 +281,10 @@
                     </div>
                 </div>
                 <div class="modal-buttons">
-                    <button id="continue-without-key" class="neon-btn highlight-btn">
+                    <button id="continue-without-key" class="btn highlight-btn">
                         <i class="fas fa-forward"></i> Skip & Continue Without AI
                     </button>
-                    <button id="save-modal-api-key" class="neon-btn primary">Save API Key</button>
+                    <button id="save-modal-api-key" class="btn primary">Save API Key</button>
                 </div>
             </div>
         </div>
