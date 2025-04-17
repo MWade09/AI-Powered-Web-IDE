@@ -128,6 +128,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
   margin-bottom: var(--spacing-md);
@@ -522,20 +523,6 @@ main {
   flex: 1;
 }
 
-/* Active Section Highlight */
-.active-section {
-  border: 2px solid var(--accent-blue);
-  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
-}
-
-.chat-section.active-section .chat-input-container {
-  background-color: rgba(96, 165, 250, 0.2);
-}
-
-.agent-section.active-section .agent-input-container {
-  background-color: rgba(236, 72, 153, 0.2);
-}
-
 /* File Explorer */
 .file-explorer {
   position: relative;
@@ -588,35 +575,19 @@ main {
   padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  transition: background var(--transition-fast);
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  position: relative; /* For selection indicator */
-  border-left: 3px solid transparent; /* For selection indicator */
 }
 
 .file:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateX(3px); /* Slight shift on hover */
 }
 
 .file.active {
-  background: rgba(96, 165, 250, 0.2); /* Bright blue background */
+  background: rgba(255, 255, 255, 0.2);
   color: var(--accent-blue);
-  border-left: 3px solid var(--accent-blue); /* Blue indicator on left side */
-  font-weight: 600;
-}
-
-.file.selected {
-  background: rgba(236, 72, 153, 0.2); /* Pink background for selected */
-  color: var(--accent-pink);
-  border-left: 3px solid var(--accent-pink); /* Pink indicator on left side */
-}
-
-.file.active.selected {
-  background: linear-gradient(90deg, rgba(96, 165, 250, 0.2), rgba(236, 72, 153, 0.2));
-  border-left: 3px solid var(--accent-white);
 }
 
 .html-file i {
@@ -789,59 +760,6 @@ button {
 
 .icon-btn:active::after {
   animation: ripple 0.6s ease-out;
-}
-
-/* Basic button style that matches the screenshot */
-.btn {
-  background-color: rgba(96, 165, 250, 0.2);
-  color: var(--text-primary);
-  border: 1px solid var(--accent-blue);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: all var(--transition-normal);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  min-width: 80px;
-  justify-content: center;
-}
-
-.btn:hover {
-  background-color: rgba(96, 165, 250, 0.4);
-  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
-}
-
-.btn.primary {
-  background-color: rgba(236, 72, 153, 0.2);
-  border-color: var(--accent-pink);
-}
-
-.btn.primary:hover {
-  background-color: rgba(236, 72, 153, 0.4);
-  box-shadow: 0 0 10px rgba(236, 72, 153, 0.6);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Controls section styling */
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-top: var(--spacing-md);
-}
-
-.mode-buttons, .action-controls, .action-buttons {
-  display: flex;
-  gap: var(--spacing-sm);
-  align-items: center;
 }
 
 /* Form Elements */
@@ -1134,47 +1052,6 @@ select:disabled, input:disabled {
   100% {
     transform: translateX(100%);
   }
-}
-
-/* Context Menu Styling */
-.context-menu {
-  position: absolute;
-  z-index: 1000;
-  background: var(--surface-secondary);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  min-width: 160px;
-  backdrop-filter: blur(10px);
-}
-
-.context-menu-item {
-  padding: var(--spacing-sm) var(--spacing-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  transition: all var(--transition-fast);
-}
-
-.context-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.context-menu-item i {
-  width: 20px;
-  text-align: center;
-}
-
-.delete-item {
-  color: var(--error-red);
-}
-
-.context-menu-separator {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: var(--spacing-xs) 0;
 }
 
 /* Utility Classes */
