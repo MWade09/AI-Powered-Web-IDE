@@ -522,6 +522,20 @@ main {
   flex: 1;
 }
 
+/* Active Section Highlight */
+.active-section {
+  border: 2px solid var(--accent-blue);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+}
+
+.chat-section.active-section .chat-input-container {
+  background-color: rgba(96, 165, 250, 0.2);
+}
+
+.agent-section.active-section .agent-input-container {
+  background-color: rgba(236, 72, 153, 0.2);
+}
+
 /* File Explorer */
 .file-explorer {
   position: relative;

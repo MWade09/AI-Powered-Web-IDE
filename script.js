@@ -99,92 +99,108 @@ const exportZip = document.getElementById('export-zip');
  */
 function init() {
     // Start with API key modal hidden - no API key required to use the editor
-    apiKeyModal.classList.add('hidden');
-    apiKeyModal.style.display = 'none';
+    if (apiKeyModal) {
+        apiKeyModal.classList.add('hidden');
+        apiKeyModal.style.display = 'none';
+    }
     
     // Make Agent Mode panel visible by default (remove hidden class)
-    agentSection.classList.remove('hidden');
+    if (agentSection) {
+        agentSection.classList.remove('hidden');
+    }
     
     // Set editor as fully functional without AI features
     updateApiKeyStatus(false);
     
     // Set up event listeners for API key
-    apiKeyInput.addEventListener('input', validateApiKey);
-    saveApiKeyBtn.addEventListener('click', saveApiKey);
-    modalApiKeyInput.addEventListener('input', validateApiKey);
-    saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
-    continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
+    if (apiKeyInput) apiKeyInput.addEventListener('input', validateApiKey);
+    if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', saveApiKey);
+    if (modalApiKeyInput) modalApiKeyInput.addEventListener('input', validateApiKey);
+    if (saveModalApiKeyBtn) saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
+    if (continueWithoutKeyBtn) continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
     
     // Add info button functionality
-    document.getElementById('show-api-info').addEventListener('click', showApiKeyInfo);
+    const infoBtn = document.getElementById('show-api-info');
+    if (infoBtn) infoBtn.addEventListener('click', showApiKeyInfo);
+    
+    // Show welcome modal on first load
+    showApiKeyModal();
     
     // Set up event listeners for mode switching
-    chatModeBtn.addEventListener('click', () => switchMode('chat'));
-    agentModeBtn.addEventListener('click', () => switchMode('agent'));
+    if (chatModeBtn) chatModeBtn.addEventListener('click', () => switchMode('chat'));
+    if (agentModeBtn) agentModeBtn.addEventListener('click', () => switchMode('agent'));
     
     // Set up event listeners for editor
-    htmlEditor.addEventListener('input', debounce(updatePreview, 300));
-    cssEditor.addEventListener('input', debounce(updatePreview, 300));
-    jsEditor.addEventListener('input', debounce(updatePreview, 300));
-    refreshPreviewBtn.addEventListener('click', updatePreview);
+    if (htmlEditor) htmlEditor.addEventListener('input', debounce(updatePreview, 300));
+    if (cssEditor) cssEditor.addEventListener('input', debounce(updatePreview, 300));
+    if (jsEditor) jsEditor.addEventListener('input', debounce(updatePreview, 300));
+    if (refreshPreviewBtn) refreshPreviewBtn.addEventListener('click', updatePreview);
     
     // Set up event listeners for tabs
-    htmlTab.addEventListener('click', () => switchTab('html'));
-    cssTab.addEventListener('click', () => switchTab('css'));
-    jsTab.addEventListener('click', () => switchTab('js'));
+    if (htmlTab) htmlTab.addEventListener('click', () => switchTab('html'));
+    if (cssTab) cssTab.addEventListener('click', () => switchTab('css'));
+    if (jsTab) jsTab.addEventListener('click', () => switchTab('js'));
+    
+    // Set up file click events manually (more reliable than querySelectorAll)
+    const htmlFile = document.querySelector('.html-file');
+    const cssFile = document.querySelector('.css-file');
+    const jsFile = document.querySelector('.js-file');
+    
+    if (htmlFile) htmlFile.addEventListener('click', () => switchTab('html'));
+    if (cssFile) cssFile.addEventListener('click', () => switchTab('css'));
+    if (jsFile) jsFile.addEventListener('click', () => switchTab('js'));
     
     // Set up event listeners for chat
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    });
-    sendChatBtn.addEventListener('click', sendChatMessage);
+    if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+    }
+    if (sendChatBtn) sendChatBtn.addEventListener('click', sendChatMessage);
     
     // Set up event listeners for agent
-    agentInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-            e.preventDefault();
-            executeAgentAction();
-        }
-    });
-    executeAgentBtn.addEventListener('click', executeAgentAction);
+    if (agentInput) {
+        agentInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                executeAgentAction();
+            }
+        });
+    }
+    if (executeAgentBtn) executeAgentBtn.addEventListener('click', executeAgentAction);
     
     // Set up event listeners for model selection
-    addModelBtn.addEventListener('click', showAddModelModal);
-    cancelAddModel.addEventListener('click', hideAddModelModal);
-    confirmAddModel.addEventListener('click', addCustomModel);
+    if (addModelBtn) addModelBtn.addEventListener('click', showAddModelModal);
+    if (cancelAddModel) cancelAddModel.addEventListener('click', hideAddModelModal);
+    if (confirmAddModel) confirmAddModel.addEventListener('click', addCustomModel);
     
     // Set up event listeners for file explorer
-    downloadFileBtn.addEventListener('click', downloadCurrentFile);
-    downloadProjectBtn.addEventListener('click', downloadProject);
-    fileList.forEach(file => {
-        file.addEventListener('click', () => {
-            const fileType = file.classList.contains('html-file') ? 'html' : 
-                            file.classList.contains('css-file') ? 'css' : 'js';
-            switchTab(fileType);
-        });
-    });
+    if (downloadFileBtn) downloadFileBtn.addEventListener('click', downloadCurrentFile);
+    if (downloadProjectBtn) downloadProjectBtn.addEventListener('click', downloadProject);
     
     // Set up event listeners for debug panel
-    debugToggle.addEventListener('click', toggleDebugPanel);
-    closeDebugBtn.addEventListener('click', toggleDebugPanel);
-    clearLogsBtn.addEventListener('click', clearLogs);
+    if (debugToggle) debugToggle.addEventListener('click', toggleDebugPanel);
+    if (closeDebugBtn) closeDebugBtn.addEventListener('click', toggleDebugPanel);
+    if (clearLogsBtn) clearLogsBtn.addEventListener('click', clearLogs);
     
     // Set up event listeners for export
-    exportHtml.addEventListener('click', () => exportContent('html'));
-    exportCss.addEventListener('click', () => exportContent('css'));
-    exportJs.addEventListener('click', () => exportContent('js'));
-    exportZip.addEventListener('click', () => exportContent('zip'));
+    if (exportHtml) exportHtml.addEventListener('click', () => exportContent('html'));
+    if (exportCss) exportCss.addEventListener('click', () => exportContent('css'));
+    if (exportJs) exportJs.addEventListener('click', () => exportContent('js'));
+    if (exportZip) exportZip.addEventListener('click', () => exportContent('zip'));
     
     // Set up debug tabs
-    debugTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabName = tab.dataset.tab;
-            setActiveDebugTab(tabName);
+    if (debugTabs) {
+        debugTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                setActiveDebugTab(tabName);
+            });
         });
-    });
+    }
     
     // Set up close buttons for modals
     document.querySelectorAll('.close-modal').forEach(btn => {
@@ -315,468 +331,73 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /**
- * Set up file explorer functionality
+ * Save the API key from the modal
  */
-function setupFileExplorer() {
-    const fileList = document.querySelector('.file-list');
-    const contextMenu = document.getElementById('file-context-menu');
-    const newFileBtn = document.getElementById('new-file-btn');
-    
-    // File selection
-    fileList.addEventListener('click', (e) => {
-        const file = e.target.closest('.file');
-        if (!file) return;
+function saveModalApiKey() {
+    const key = modalApiKeyInput ? modalApiKeyInput.value.trim() : '';
+    if (key) {
+        // Use the modal's API key input
+        apiKey = key;
         
-        const fileType = file.dataset.type;
-        switchTab(fileType);
-    });
-    
-    // Multiple file selection with Ctrl/Cmd key
-    fileList.addEventListener('click', (e) => {
-        const file = e.target.closest('.file');
-        if (!file) return;
-        
-        if (e.ctrlKey || e.metaKey) {
-            // Toggle selection for Ctrl+click
-            file.classList.toggle('selected');
-        } else {
-            // Clear other selections if not using Ctrl/Cmd
-            document.querySelectorAll('.file.selected').forEach(f => {
-                if (f !== file) f.classList.remove('selected');
-            });
-        }
-    });
-    
-    // Context menu
-    fileList.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        
-        const file = e.target.closest('.file');
-        if (!file) return;
-        
-        // Position the context menu
-        const rect = file.getBoundingClientRect();
-        contextMenu.style.top = `${e.clientY}px`;
-        contextMenu.style.left = `${e.clientX}px`;
-        
-        // Store the target file for the menu actions
-        contextMenu.dataset.targetFile = file.dataset.file;
-        contextMenu.dataset.targetType = file.dataset.type;
-        
-        // Show the menu
-        contextMenu.classList.remove('hidden');
-        
-        // Make sure the target file is selected
-        if (!e.ctrlKey && !e.metaKey) {
-            document.querySelectorAll('.file.selected').forEach(f => 
-                f.classList.remove('selected'));
-        }
-        file.classList.add('selected');
-    });
-    
-    // Close context menu when clicking elsewhere
-    document.addEventListener('click', () => {
-        contextMenu.classList.add('hidden');
-    });
-    
-    // Context menu actions
-    contextMenu.addEventListener('click', (e) => {
-        const action = e.target.closest('.context-menu-item')?.dataset.action;
-        if (!action) return;
-        
-        const targetFile = contextMenu.dataset.targetFile;
-        const targetType = contextMenu.dataset.targetType;
-        
-        switch (action) {
-            case 'rename':
-                renameFile(targetFile, targetType);
-                break;
-            case 'duplicate':
-                duplicateFile(targetFile, targetType);
-                break;
-            case 'download':
-                downloadFileByName(targetFile, targetType);
-                break;
-            case 'delete':
-                deleteFile(targetFile, targetType);
-                break;
+        // Update the main input as well
+        if (apiKeyInput) {
+            apiKeyInput.value = key;
         }
         
-        // Hide the menu after action
-        contextMenu.classList.add('hidden');
-    });
-    
-    // New file button
-    newFileBtn.addEventListener('click', createNewFile);
-}
-
-/**
- * Create a new file in the file explorer
- */
-function createNewFile() {
-    // Show a modal to get the new file name
-    const fileName = prompt('Enter new file name (with extension):', 'new-file.js');
-    if (!fileName) return;
-    
-    // Determine file type
-    let fileType = 'js';
-    let iconClass = 'fa-js';
-    
-    if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
-        fileType = 'html';
-        iconClass = 'fa-html5';
-    } else if (fileName.endsWith('.css')) {
-        fileType = 'css';
-        iconClass = 'fa-css3-alt';
-    } else if (!fileName.endsWith('.js')) {
-        if (!confirm('File doesn\'t have a recognized extension (.html, .css, .js). Continue anyway?')) {
-            return;
+        // Update API key status
+        updateApiKeyStatus(true);
+        
+        // Close the modal
+        if (apiKeyModal) {
+            apiKeyModal.classList.add('hidden');
+            apiKeyModal.style.display = 'none';
         }
-    }
-    
-    // Create new DOM element for the file
-    const fileElement = document.createElement('div');
-    fileElement.className = `file ${fileType}-file`;
-    fileElement.dataset.file = fileName;
-    fileElement.dataset.type = fileType;
-    fileElement.innerHTML = `<i class="fab ${iconClass}"></i> ${fileName}`;
-    
-    // Add to file list
-    document.querySelector('.file-list').appendChild(fileElement);
-    
-    // Create blank content for the new file
-    if (fileType === 'html') {
-        createNewFileContent('html', fileName);
-    } else if (fileType === 'css') {
-        createNewFileContent('css', fileName);
+        
+        logToDebug('API key saved successfully from welcome modal', 'success');
     } else {
-        createNewFileContent('js', fileName);
-    }
-    
-    logToDebug(`Created new file: ${fileName}`, 'success');
-}
-
-/**
- * Create content for a new file
- * @param {string} fileType - Type of file ('html', 'css', or 'js')
- * @param {string} fileName - Name of the file
- */
-function createNewFileContent(fileType, fileName) {
-    // In a full implementation, this would actually create separate content storage
-    // For now, we'll simulate creating new files with comments
-    const currentEditor = fileType === 'html' ? htmlEditor :
-                          fileType === 'css' ? cssEditor : jsEditor;
-    
-    const currentContent = currentEditor.value;
-    const timestamp = new Date().toLocaleString();
-    
-    // Add a comment indicating we've created a new file
-    currentEditor.value = `/* 
-* New file created: ${fileName}
-* Created on: ${timestamp}
-* Note: In this demo, file contents are simulated.
-* In a full implementation, each file would have separate storage.
-*/\n\n${currentContent}`;
-    
-    // Switch to the appropriate tab
-    switchTab(fileType);
-}
-
-/**
- * Rename a file in the file explorer
- * @param {string} fileName - Name of the file to rename
- * @param {string} fileType - Type of file ('html', 'css', or 'js')
- */
-function renameFile(fileName, fileType) {
-    const newName = prompt(`Rename ${fileName} to:`, fileName);
-    if (!newName || newName === fileName) return;
-    
-    // Find the file element
-    const fileElement = document.querySelector(`.file[data-file="${fileName}"]`);
-    if (!fileElement) return;
-    
-    // Determine new file type based on extension
-    let newType = fileType;
-    let iconClass = fileElement.querySelector('i').className;
-    
-    if (newName.endsWith('.html') || newName.endsWith('.htm')) {
-        newType = 'html';
-        iconClass = 'fab fa-html5';
-    } else if (newName.endsWith('.css')) {
-        newType = 'css';
-        iconClass = 'fab fa-css3-alt';
-    } else if (newName.endsWith('.js')) {
-        newType = 'js';
-        iconClass = 'fab fa-js';
-    }
-    
-    // Update file element
-    fileElement.dataset.file = newName;
-    fileElement.dataset.type = newType;
-    fileElement.innerHTML = `<i class="${iconClass}"></i> ${newName}`;
-    fileElement.className = `file ${newType}-file${fileElement.classList.contains('active') ? ' active' : ''}`;
-    
-    logToDebug(`Renamed ${fileName} to ${newName}`, 'success');
-}
-
-/**
- * Duplicate a file in the file explorer
- * @param {string} fileName - Name of the file to duplicate
- * @param {string} fileType - Type of file ('html', 'css', or 'js')
- */
-function duplicateFile(fileName, fileType) {
-    // Generate a copy name
-    const baseName = fileName.includes('.') ? 
-        fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
-    const extension = fileName.includes('.') ? 
-        fileName.substring(fileName.lastIndexOf('.')) : '';
-    const newName = `${baseName}-copy${extension}`;
-    
-    // Create new DOM element for the file
-    const fileElement = document.createElement('div');
-    fileElement.className = `file ${fileType}-file`;
-    fileElement.dataset.file = newName;
-    fileElement.dataset.type = fileType;
-    
-    const iconClass = fileType === 'html' ? 'fa-html5' : 
-                     fileType === 'css' ? 'fa-css3-alt' : 'fa-js';
-    
-    fileElement.innerHTML = `<i class="fab ${iconClass}"></i> ${newName}`;
-    
-    // Add to file list
-    document.querySelector('.file-list').appendChild(fileElement);
-    
-    logToDebug(`Duplicated ${fileName} to ${newName}`, 'success');
-}
-
-/**
- * Download a specific file by name
- * @param {string} fileName - Name of the file to download
- * @param {string} fileType - Type of file ('html', 'css', or 'js')
- */
-function downloadFileByName(fileName, fileType) {
-    // Get content based on file type
-    const content = fileType === 'html' ? htmlEditor.value :
-                   fileType === 'css' ? cssEditor.value : jsEditor.value;
-    
-    // Determine content type
-    const contentType = fileType === 'html' ? 'text/html' :
-                       fileType === 'css' ? 'text/css' : 'text/javascript';
-    
-    // Download the file
-    downloadFile(fileName, content, contentType);
-}
-
-/**
- * Delete a file from the file explorer
- * @param {string} fileName - Name of the file to delete
- * @param {string} fileType - Type of file ('html', 'css', or 'js')
- */
-function deleteFile(fileName, fileType) {
-    // Prevent deleting the last file of a type
-    const filesOfType = document.querySelectorAll(`.file.${fileType}-file`);
-    if (filesOfType.length <= 1) {
-        alert(`Cannot delete the last ${fileType.toUpperCase()} file.`);
-        return;
-    }
-    
-    // Confirm deletion
-    if (!confirm(`Are you sure you want to delete ${fileName}?`)) {
-        return;
-    }
-    
-    // Find and remove the file element
-    const fileElement = document.querySelector(`.file[data-file="${fileName}"]`);
-    if (fileElement) {
-        // If the deleted file was active, activate another file of the same type
-        if (fileElement.classList.contains('active')) {
-            const otherFile = [...filesOfType].find(f => f !== fileElement);
-            if (otherFile) {
-                switchTab(fileType);
-                otherFile.classList.add('active');
-            }
+        logToDebug('No API key provided in modal', 'warning');
+        // Show error message or shake effect
+        if (modalApiKeyInput) {
+            modalApiKeyInput.classList.add('error');
+            setTimeout(() => modalApiKeyInput.classList.remove('error'), 1000);
         }
-        
-        fileElement.remove();
-        logToDebug(`Deleted file: ${fileName}`, 'success');
     }
-}
-
-/**
- * Set up keyboard shortcuts for common actions
- */
-function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-        // Ctrl/Command key shortcuts
-        if (e.ctrlKey || e.metaKey) {
-            switch (e.key.toLowerCase()) {
-                case 's': // Save current file
-                    e.preventDefault();
-                    downloadCurrentFile();
-                    break;
-                case 'r': // Refresh preview
-                    e.preventDefault();
-                    updatePreview();
-                    break;
-                case 'e': // Enhance code
-                    e.preventDefault();
-                    enhanceCode();
-                    break;
-                case '1': // Switch to HTML tab
-                    e.preventDefault();
-                    switchTab('html');
-                    break;
-                case '2': // Switch to CSS tab
-                    e.preventDefault();
-                    switchTab('css');
-                    break;
-                case '3': // Switch to JS tab
-                    e.preventDefault();
-                    switchTab('js');
-                    break;
-            }
-        }
-        
-        // Alt key shortcuts
-        if (e.altKey) {
-            switch (e.key.toLowerCase()) {
-                case 'c': // Switch to Chat Mode
-                    e.preventDefault();
-                    switchMode('chat');
-                    break;
-                case 'a': // Switch to Agent Mode
-                    e.preventDefault();
-                    switchMode('agent');
-                    break;
-                case 'd': // Toggle Debug Panel
-                    e.preventDefault();
-                    toggleDebugPanel();
-                    break;
-            }
-        }
-    });
-}
-
-/**
- * Show the API key modal on first load
- */
-function showApiKeyModal() {
-    apiKeyModal.classList.remove('hidden');
-    modalApiKeyInput.focus();
 }
 
 /**
  * Continue without an API key
  */
 function continueWithoutKey() {
-    apiKeyModal.classList.add('hidden');
-    logToDebug('Continuing without API key. AI features will be disabled.', 'warning');
-    updateApiKeyStatus(false);
-    
-    // Make sure the modal is completely hidden
-    setTimeout(() => {
-        apiKeyModal.style.display = 'none';
-    }, 100);
-}
-
-/**
- * Validate the API key format
- * @param {Event} event - Input event
- */
-function validateApiKey(event) {
-    const input = event.target;
-    const key = input.value.trim();
-    
-    // Basic validation - OpenRouter keys typically start with 'sk-'
-    if (key && key.startsWith('sk-') && key.length > 10) {
-        input.style.borderColor = 'var(--success-green)';
-        return true;
-    } else if (key) {
-        input.style.borderColor = 'var(--error-red)';
-        return false;
-    } else {
-        input.style.borderColor = '';
-        return false;
-    }
-}
-
-/**
- * Save the API key from the main input
- */
-function saveApiKey() {
-    const key = apiKeyInput.value.trim();
-    if (key) {
-        if (validateApiKey({ target: apiKeyInput })) {
-            apiKey = key;
-            updateApiKeyStatus(true);
-            logToDebug('API key saved successfully', 'success');
-        } else {
-            logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
-        }
-    } else {
-        apiKey = '';
-        updateApiKeyStatus(false);
-        logToDebug('API key removed', 'warning');
-    }
-}
-
-/**
- * Save the API key from the modal
- */
-function saveModalApiKey() {
-    const key = modalApiKeyInput.value.trim();
-    if (key) {
-        if (validateApiKey({ target: modalApiKeyInput })) {
-            apiKey = key;
-            apiKeyInput.value = key;
-            updateApiKeyStatus(true);
-            apiKeyModal.classList.add('hidden');
-            logToDebug('API key saved successfully', 'success');
-        } else {
-            logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
-        }
-    } else {
-        continueWithoutKey();
-    }
-}
-
-/**
- * Update the API key status indicators and enable/disable AI features
- * @param {boolean} isValid - Whether the API key is valid
- */
-function updateApiKeyStatus(isValid) {
-    if (isValid) {
-        apiKeyStatus.textContent = 'API Key Set';
-        apiKeyStatus.className = 'status-indicator success';
-        apiKeyDebugStatus.textContent = 'Valid';
-        apiKeyDebugStatus.className = 'success';
-        
-        // Enable AI features
-        modelSelector.disabled = false;
-        addModelBtn.disabled = false;
-        enhanceBtn.disabled = false;
-        sendChatBtn.disabled = false;
-        executeAgentBtn.disabled = false;
-    } else {
-        apiKeyStatus.textContent = 'No API Key Set';
-        apiKeyStatus.className = 'status-indicator';
-        apiKeyDebugStatus.textContent = 'Not Set';
-        apiKeyDebugStatus.className = '';
-        
-        // Disable AI features but ensure UI is still functional
-        modelSelector.disabled = true;
-        addModelBtn.disabled = true;
-        enhanceBtn.disabled = true;
-        sendChatBtn.disabled = true;
-        executeAgentBtn.disabled = true;
-        
-        // Make sure the modal is completely gone
+    // Close the modal
+    if (apiKeyModal) {
         apiKeyModal.classList.add('hidden');
         apiKeyModal.style.display = 'none';
     }
     
-    // Ensure editor functionality works regardless of API key status
-    updatePreview();
+    // Set status to indicate no API key
+    apiKey = '';
+    updateApiKeyStatus(false);
+    
+    logToDebug('Continuing without API key. AI features will be disabled.', 'warning');
+}
+
+/**
+ * Show the API key modal on first load
+ */
+function showApiKeyModal() {
+    if (apiKeyModal) {
+        apiKeyModal.classList.remove('hidden');
+        apiKeyModal.style.display = 'flex';
+        
+        // Focus the input field for better UX
+        if (modalApiKeyInput) {
+            setTimeout(() => modalApiKeyInput.focus(), 300);
+        }
+        
+        logToDebug('API key modal displayed', 'info');
+    } else {
+        logToDebug('API key modal element not found', 'error');
+    }
 }
 
 /**
@@ -786,18 +407,19 @@ function updateApiKeyStatus(isValid) {
 function switchMode(mode) {
     currentMode = mode;
     
-    // Update mode buttons
-    chatModeBtn.classList.toggle('active', mode === 'chat');
-    agentModeBtn.classList.toggle('active', mode === 'agent');
+    // Update mode buttons - safely check if elements exist
+    if (chatModeBtn) chatModeBtn.classList.toggle('active', mode === 'chat');
+    if (agentModeBtn) agentModeBtn.classList.toggle('active', mode === 'agent');
     
-    // Update section visibility
-    chatSection.classList.toggle('hidden', mode !== 'chat');
-    agentSection.classList.toggle('hidden', mode !== 'agent');
+    // In our new design, we don't need to hide sections as they're always visible
+    // But we do want to highlight the active section
+    if (chatSection) chatSection.classList.toggle('active-section', mode === 'chat');
+    if (agentSection) agentSection.classList.toggle('active-section', mode === 'agent');
     
-    // Focus the appropriate input field
-    if (mode === 'chat') {
+    // Focus the appropriate input field if it exists
+    if (mode === 'chat' && chatInput) {
         chatInput.focus();
-    } else {
+    } else if (mode === 'agent' && agentInput) {
         agentInput.focus();
     }
     
@@ -811,991 +433,158 @@ function switchMode(mode) {
 function switchTab(tab) {
     currentTab = tab;
     
-    // Update tab buttons
-    htmlTab.classList.toggle('active', tab === 'html');
-    cssTab.classList.toggle('active', tab === 'css');
-    jsTab.classList.toggle('active', tab === 'js');
+    // Update tab buttons - safely check if elements exist
+    if (htmlTab) htmlTab.classList.toggle('active', tab === 'html');
+    if (cssTab) cssTab.classList.toggle('active', tab === 'css');
+    if (jsTab) jsTab.classList.toggle('active', tab === 'js');
     
     // Update editor visibility
-    document.getElementById('html-editor').classList.toggle('active', tab === 'html');
-    document.getElementById('css-editor').classList.toggle('active', tab === 'css');
-    document.getElementById('js-editor').classList.toggle('active', tab === 'js');
+    const htmlEditorDiv = document.getElementById('html-editor');
+    const cssEditorDiv = document.getElementById('css-editor');
+    const jsEditorDiv = document.getElementById('js-editor');
+    
+    if (htmlEditorDiv) htmlEditorDiv.classList.toggle('active', tab === 'html');
+    if (cssEditorDiv) cssEditorDiv.classList.toggle('active', tab === 'css');
+    if (jsEditorDiv) jsEditorDiv.classList.toggle('active', tab === 'js');
     
     // Update file list selection
-    document.querySelector('.html-file').classList.toggle('active', tab === 'html');
-    document.querySelector('.css-file').classList.toggle('active', tab === 'css');
-    document.querySelector('.js-file').classList.toggle('active', tab === 'js');
+    const htmlFile = document.querySelector('.html-file');
+    const cssFile = document.querySelector('.css-file');
+    const jsFile = document.querySelector('.js-file');
+    
+    if (htmlFile) htmlFile.classList.toggle('active', tab === 'html');
+    if (cssFile) cssFile.classList.toggle('active', tab === 'css'); 
+    if (jsFile) jsFile.classList.toggle('active', tab === 'js');
+    
+    // Focus the appropriate editor
+    try {
+        if (tab === 'html' && htmlEditor) htmlEditor.focus();
+        if (tab === 'css' && cssEditor) cssEditor.focus();
+        if (tab === 'js' && jsEditor) jsEditor.focus();
+    } catch (e) {
+        // Ignore focus errors
+        console.log("Could not focus editor:", e);
+    }
     
     logToDebug(`Switched to ${tab.toUpperCase()} tab`, 'info');
 }
 
 /**
- * Update the preview iframe with the current code
+ * Set up file explorer functionality
  */
-function updatePreview() {
-    try {
-        // Get the HTML, CSS, and JS code
-        const htmlCode = htmlEditor.value;
-        const cssCode = cssEditor.value;
-        const jsCode = jsEditor.value;
-        
-        // Create a complete HTML document
-        let previewContent = htmlCode;
-        
-        // If the HTML doesn't include style tags, inject the CSS
-        if (!previewContent.includes('</style>')) {
-            previewContent = previewContent.replace('</head>', `<style>${cssCode}</style></head>`);
-        } else {
-            // Replace the content between style tags
-            previewContent = previewContent.replace(/<style>([\s\S]*?)<\/style>/, `<style>${cssCode}</style>`);
-        }
-        
-        // If the HTML doesn't include script tags, inject the JS
-        if (!previewContent.includes('</script>')) {
-            previewContent = previewContent.replace('</body>', `<script>${jsCode}</script></body>`);
-        } else {
-            // Replace the content between script tags
-            previewContent = previewContent.replace(/<script>([\s\S]*?)<\/script>/, `<script>${jsCode}</script>`);
-        }
-        
-        // Update the iframe content
-        const iframe = previewFrame;
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        
-        iframeDoc.open();
-        iframeDoc.write(previewContent);
-        iframeDoc.close();
-        
-        logToDebug('Preview updated', 'info');
-    } catch (error) {
-        logToDebug(`Error updating preview: ${error.message}`, 'error');
-    }
-}
-
-/**
- * Send a chat message to the AI
- */
-async function sendChatMessage() {
-    if (!apiKey) {
-        logToDebug('API key is required to use chat', 'error');
+function setupFileExplorer() {
+    const fileListContainer = document.querySelector('.file-list');
+    const contextMenu = document.getElementById('file-context-menu');
+    const newFileBtn = document.getElementById('new-file-btn');
+    
+    if (!fileListContainer || !contextMenu) {
+        console.warn('File explorer elements not found');
         return;
     }
     
-    const message = chatInput.value.trim();
-    if (!message) {
-        return;
-    }
+    // Get individual file items
+    const files = document.querySelectorAll('.file');
     
-    // Add user message to chat
-    addMessageToChat('user', message);
-    
-    // Clear input
-    chatInput.value = '';
-    
-    // Get current code context
-    const codeContext = {
-        html: htmlEditor.value,
-        css: cssEditor.value,
-        js: jsEditor.value
-    };
-    
-    // Disable send button
-    sendChatBtn.disabled = true;
-    
-    try {
-        // Show typing indicator
-        addTypingIndicator();
-        
-        const selectedModel = modelSelector.value;
-        const modelName = modelSelector.options[modelSelector.selectedIndex].text;
-        
-        logToDebug(`Sending chat message to ${modelName}`, 'info');
-        
-        const startTime = Date.now();
-        
-        // Prepare the API request
-        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'Advanced Web IDE'
-            },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a helpful web development assistant in a code editor environment. The user is working on a web project with HTML, CSS, and JavaScript. 
-                        
-Current code context:
-HTML: ${codeContext.html.length > 500 ? codeContext.html.substring(0, 500) + '...' : codeContext.html}
-CSS: ${codeContext.css.length > 500 ? codeContext.css.substring(0, 500) + '...' : codeContext.css}
-JS: ${codeContext.js.length > 500 ? codeContext.js.substring(0, 500) + '...' : codeContext.js}
-
-Provide helpful advice, answer questions, and suggest improvements. You can provide code snippets when relevant. This is Chat Mode, so you should not directly modify the user's code - instead, explain concepts and provide examples that the user can implement themselves.`
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ]
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
+    // Individual file click event
+    files.forEach(file => {
+        if (file) {
+            // File selection for tab switching
+            file.addEventListener('click', () => {
+                const fileType = file.dataset.type || 
+                                (file.classList.contains('html-file') ? 'html' : 
+                                 file.classList.contains('css-file') ? 'css' : 'js');
+                
+                switchTab(fileType);
+            });
+            
+            // Multiple selection with Ctrl/Cmd key
+            file.addEventListener('click', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    // Toggle selection for Ctrl+click
+                    file.classList.toggle('selected');
+                } else {
+                    // Clear other selections if not using Ctrl/Cmd
+                    document.querySelectorAll('.file.selected').forEach(f => {
+                        if (f !== file) f.classList.remove('selected');
+                    });
+                }
+            });
+            
+            // Context menu
+            file.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                
+                // Position the context menu
+                contextMenu.style.top = `${e.clientY}px`;
+                contextMenu.style.left = `${e.clientX}px`;
+                
+                // Store the target file for the menu actions
+                const fileName = file.dataset.file || 
+                                (file.classList.contains('html-file') ? 'index.html' : 
+                                 file.classList.contains('css-file') ? 'styles.css' : 'script.js');
+                
+                const fileType = file.dataset.type || 
+                                (file.classList.contains('html-file') ? 'html' : 
+                                 file.classList.contains('css-file') ? 'css' : 'js');
+                
+                contextMenu.dataset.targetFile = fileName;
+                contextMenu.dataset.targetType = fileType;
+                
+                // Show the menu
+                contextMenu.classList.remove('hidden');
+                
+                // Make sure the target file is selected
+                if (!e.ctrlKey && !e.metaKey) {
+                    document.querySelectorAll('.file.selected').forEach(f => 
+                        f.classList.remove('selected'));
+                }
+                file.classList.add('selected');
+            });
         }
-        
-        // Remove typing indicator
-        removeTypingIndicator();
-        
-        const data = await response.json();
-        const aiResponse = data.choices[0].message.content;
-        
-        // Add AI response to chat
-        addMessageToChat('ai', aiResponse);
-        
-        // Update stats
-        const responseTime = Date.now() - startTime;
-        updateApiStats(selectedModel, modelName, responseTime);
-        
-        logToDebug(`Received chat response in ${responseTime}ms`, 'success');
-    } catch (error) {
-        // Remove typing indicator
-        removeTypingIndicator();
-        
-        logToDebug(`Error in chat: ${error.message}`, 'error');
-        addMessageToChat('system', `Error: ${error.message}`);
-    } finally {
-        // Re-enable send button
-        sendChatBtn.disabled = apiKey ? false : true;
-    }
-}
-
-/**
- * Add a message to the chat
- * @param {string} role - Role of the message sender ('user', 'ai', or 'system')
- * @param {string} content - Content of the message
- */
-function addMessageToChat(role, content) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}-message`;
-    
-    // Format code blocks in the content
-    content = formatCodeBlocks(content);
-    
-    if (role === 'system') {
-        messageDiv.innerHTML = `
-            <div class="message-content">${content}</div>
-        `;
-    } else {
-        const avatar = role === 'user' ? 
-            '<div class="message-avatar"><i class="fas fa-user"></i></div>' : 
-            '<div class="message-avatar"><i class="fas fa-robot"></i></div>';
-        
-        messageDiv.innerHTML = `
-            ${avatar}
-            <div class="message-content">${content}</div>
-        `;
-    }
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Apply syntax highlighting to code blocks
-    if (window.Prism) {
-        Prism.highlightAllUnder(messageDiv);
-    }
-}
-
-/**
- * Format code blocks in message content
- * @param {string} content - Message content
- * @returns {string} Formatted content with HTML code blocks
- */
-function formatCodeBlocks(content) {
-    // Replace ```language\ncode``` with <pre><code class="language-*">code</code></pre>
-    content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
-        const lang = language || 'plaintext';
-        return `<pre><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
     });
     
-    // Replace inline `code` with <code>code</code>
-    content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Close context menu when clicking elsewhere
+    document.addEventListener('click', () => {
+        if (contextMenu) contextMenu.classList.add('hidden');
+    });
     
-    return content;
-}
-
-/**
- * Escape HTML special characters
- * @param {string} html - HTML string to escape
- * @returns {string} Escaped HTML string
- */
-function escapeHtml(html) {
-    const div = document.createElement('div');
-    div.textContent = html;
-    return div.innerHTML;
-}
-
-/**
- * Add typing indicator to chat
- */
-function addTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message ai-message typing-indicator';
-    typingDiv.innerHTML = `
-        <div class="message-avatar"><i class="fas fa-robot"></i></div>
-        <div class="message-content">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    `;
-    typingDiv.id = 'typing-indicator';
-    chatMessages.appendChild(typingDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Remove typing indicator from chat
- */
-function removeTypingIndicator() {
-    const typingIndicator = document.getElementById('typing-indicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-/**
- * Execute agent action to modify code
- */
-async function executeAgentAction() {
-    if (!apiKey) {
-        logToDebug('API key is required to use agent mode', 'error');
-        return;
-    }
-    
-    const instruction = agentInput.value.trim();
-    if (!instruction) {
-        return;
-    }
-    
-    // Get target files
-    const target = agentTarget.value;
-    
-    // Get current code
-    const codeContext = {
-        html: htmlEditor.value,
-        css: cssEditor.value,
-        js: jsEditor.value
-    };
-    
-    // Disable execute button
-    executeAgentBtn.disabled = true;
-    agentInput.disabled = true;
-    
-    try {
-        // Show loading state
-        agentInput.classList.add('loading');
-        
-        const selectedModel = modelSelector.value;
-        const modelName = modelSelector.options[modelSelector.selectedIndex].text;
-        
-        logToDebug(`Executing agent action with ${modelName}`, 'info');
-        
-        const startTime = Date.now();
-        
-        // Prepare the API request
-        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'Advanced Web IDE'
-            },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are an AI agent that directly modifies code in a web development environment. The user will provide instructions, and you should return the modified code files based on those instructions.
-
-Current code:
-${target === 'all' || target === 'html' ? `HTML:\n${codeContext.html}\n\n` : ''}
-${target === 'all' || target === 'css' ? `CSS:\n${codeContext.css}\n\n` : ''}
-${target === 'all' || target === 'js' ? `JavaScript:\n${codeContext.js}\n\n` : ''}
-
-Instructions:
-1. Analyze the user's request and the current code
-2. Make the requested changes to the code
-3. Return ONLY the complete modified code files with no explanations
-4. Use the following format for your response:
-
-\`\`\`html
-[Complete HTML code here]
-\`\`\`
-
-\`\`\`css
-[Complete CSS code here]
-\`\`\`
-
-\`\`\`javascript
-[Complete JavaScript code here]
-\`\`\`
-
-Only include the code blocks for files that you've modified. If you haven't changed a file, don't include it in your response.`
-                    },
-                    {
-                        role: 'user',
-                        content: instruction
-                    }
-                ]
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        const agentResponse = data.choices[0].message.content;
-        
-        // Extract code from response
-        const htmlMatch = agentResponse.match(/```html\n([\s\S]*?)```/);
-        const cssMatch = agentResponse.match(/```css\n([\s\S]*?)```/);
-        const jsMatch = agentResponse.match(/```javascript\n([\s\S]*?)```/) || agentResponse.match(/```js\n([\s\S]*?)```/);
-        
-        // Update code editors with extracted code
-        if (htmlMatch && (target === 'all' || target === 'html')) {
-            htmlEditor.value = htmlMatch[1];
-            logToDebug('HTML code updated by agent', 'success');
-        }
-        
-        if (cssMatch && (target === 'all' || target === 'css')) {
-            cssEditor.value = cssMatch[1];
-            logToDebug('CSS code updated by agent', 'success');
-        }
-        
-        if (jsMatch && (target === 'all' || target === 'js')) {
-            jsEditor.value = jsMatch[1];
-            logToDebug('JavaScript code updated by agent', 'success');
-        }
-        
-        // Update preview
-        updatePreview();
-        
-        // Update stats
-        const responseTime = Date.now() - startTime;
-        updateApiStats(selectedModel, modelName, responseTime);
-        
-        logToDebug(`Agent action completed in ${responseTime}ms`, 'success');
-        
-        // Clear agent input
-        agentInput.value = '';
-    } catch (error) {
-        logToDebug(`Error in agent action: ${error.message}`, 'error');
-    } finally {
-        // Re-enable execute button
-        executeAgentBtn.disabled = apiKey ? false : true;
-        agentInput.disabled = false;
-        agentInput.classList.remove('loading');
-    }
-}
-
-/**
- * Enhance code using OpenRouter API
- */
-async function enhanceCode() {
-    if (!apiKey) {
-        logToDebug('API key is required to enhance code', 'error');
-        return;
-    }
-    
-    if (isStreaming) {
-        logToDebug('Already processing a request. Please wait.', 'warning');
-        return;
-    }
-    
-    // Determine which code to enhance based on current tab
-    let codeToEnhance = '';
-    let editorToUpdate = null;
-    let codeType = '';
-    
-    switch (currentTab) {
-        case 'html':
-            codeToEnhance = htmlEditor.value.trim();
-            editorToUpdate = htmlEditor;
-            codeType = 'HTML';
-            break;
-        case 'css':
-            codeToEnhance = cssEditor.value.trim();
-            editorToUpdate = cssEditor;
-            codeType = 'CSS';
-            break;
-        case 'js':
-            codeToEnhance = jsEditor.value.trim();
-            editorToUpdate = jsEditor;
-            codeType = 'JavaScript';
-            break;
-    }
-    
-    if (!codeToEnhance) {
-        logToDebug(`Please enter some ${codeType} code to enhance.`, 'warning');
-        return;
-    }
-    
-    const selectedModel = modelSelector.value;
-    const modelName = modelSelector.options[modelSelector.selectedIndex].text;
-    
-    try {
-        isStreaming = true;
-        enhanceBtn.disabled = true;
-        enhanceBtn.classList.add('loading');
-        
-        logToDebug(`Enhancing ${codeType} code with model: ${modelName}`, 'info');
-        
-        const startTime = Date.now();
-        
-        // Prepare the API request
-        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'Advanced Web IDE'
-            },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a helpful web development assistant. Enhance the user's ${codeType} code by improving readability, performance, and best practices. Maintain the original functionality and structure. Return only the enhanced code without explanations or additional comments.`
-                    },
-                    {
-                        role: 'user',
-                        content: codeToEnhance
-                    }
-                ],
-                stream: true
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-        
-        // Handle streaming response
-        const reader = response.body.getReader();
-        let enhancedCode = '';
-        
-        // Clear the editor for streaming effect
-        editorToUpdate.value = '';
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+    // Context menu actions
+    if (contextMenu) {
+        contextMenu.addEventListener('click', (e) => {
+            const actionEl = e.target.closest('.context-menu-item');
+            if (!actionEl) return;
             
-            // Process the chunk
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
+            const action = actionEl.dataset.action;
+            const targetFile = contextMenu.dataset.targetFile;
+            const targetType = contextMenu.dataset.targetType;
             
-            for (const line of lines) {
-                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    try {
-                        const data = JSON.parse(line.substring(6));
-                        if (data.choices && data.choices[0].delta.content) {
-                            const content = data.choices[0].delta.content;
-                            enhancedCode += content;
-                            editorToUpdate.value += content;
-                        }
-                    } catch (e) {
-                        // Skip invalid JSON
-                    }
+            if (action && targetFile && targetType) {
+                switch (action) {
+                    case 'rename':
+                        renameFile(targetFile, targetType);
+                        break;
+                    case 'duplicate':
+                        duplicateFile(targetFile, targetType);
+                        break;
+                    case 'download':
+                        downloadFileByName(targetFile, targetType);
+                        break;
+                    case 'delete':
+                        deleteFile(targetFile, targetType);
+                        break;
                 }
             }
-        }
-        
-        // Update preview after enhancement
-        updatePreview();
-        
-        // Update stats
-        const responseTime = Date.now() - startTime;
-        updateApiStats(selectedModel, modelName, responseTime);
-        
-        logToDebug(`${codeType} enhancement completed in ${responseTime}ms`, 'success');
-    } catch (error) {
-        logToDebug(`Error enhancing ${codeType} code: ${error.message}`, 'error');
-        
-        // Show error in editor if it's empty (API failed before streaming)
-        if (editorToUpdate.value === '') {
-            editorToUpdate.value = codeToEnhance;
-        }
-    } finally {
-        isStreaming = false;
-        enhanceBtn.disabled = apiKey ? false : true;
-        enhanceBtn.classList.remove('loading');
-    }
-}
-
-/**
- * Update API usage statistics
- * @param {string} modelId - ID of the model used
- * @param {string} modelName - Display name of the model
- * @param {number} responseTime - Response time in milliseconds
- */
-function updateApiStats(modelId, modelName, responseTime) {
-    apiStats.requestCount++;
-    apiStats.lastModel = modelName;
-    apiStats.lastResponseTime = responseTime;
-    
-    // Update UI
-    requestCountEl.textContent = apiStats.requestCount;
-    currentModel.textContent = apiStats.lastModel;
-    lastResponseTimeEl.textContent = `${apiStats.lastResponseTime}ms`;
-    
-    // Add to network log
-    const networkItem = document.createElement('div');
-    networkItem.className = 'network-item';
-    networkItem.innerHTML = `
-        <div><strong>${modelName}</strong> - ${new Date().toLocaleTimeString()}</div>
-        <div>${responseTime}ms</div>
-    `;
-    debugNetwork.insertBefore(networkItem, debugNetwork.firstChild);
-}
-
-/**
- * Show the add model modal
- */
-function showAddModelModal() {
-    addModelModal.classList.remove('hidden');
-    newModelId.focus();
-}
-
-/**
- * Hide the add model modal
- */
-function hideAddModelModal() {
-    addModelModal.classList.add('hidden');
-    newModelId.value = '';
-    newModelName.value = '';
-}
-
-/**
- * Add a custom model to the dropdown
- */
-function addCustomModel() {
-    const modelId = newModelId.value.trim();
-    const modelName = newModelName.value.trim();
-    
-    if (!modelId || !modelName) {
-        logToDebug('Please enter both model ID and display name', 'warning');
-        return;
-    }
-    
-    // Add to models array
-    models.push({ id: modelId, name: modelName });
-    
-    // Add to dropdown
-    const option = document.createElement('option');
-    option.value = modelId;
-    option.textContent = modelName;
-    modelSelector.appendChild(option);
-    
-    // Select the new model
-    modelSelector.value = modelId;
-    
-    logToDebug(`Added custom model: ${modelName} (${modelId})`, 'success');
-    hideAddModelModal();
-}
-
-/**
- * Toggle the debug panel
- */
-function toggleDebugPanel() {
-    const isHidden = debugPanel.classList.toggle('hidden');
-    
-    // Update the button text to reflect current state
-    if (isHidden) {
-        debugToggle.innerHTML = '<i class="fas fa-bug"></i> Debug Panel';
-        logToDebug('Debug panel closed', 'info');
-    } else {
-        debugToggle.innerHTML = '<i class="fas fa-times"></i> Close Debug';
-        logToDebug('Debug panel opened', 'info');
-        
-        // Auto-refresh debug stats when opening
-        requestCountEl.textContent = apiStats.requestCount;
-        currentModel.textContent = apiStats.lastModel;
-        lastResponseTimeEl.textContent = `${apiStats.lastResponseTime}ms`;
-        apiKeyDebugStatus.textContent = apiKey ? 'Valid' : 'Not Set';
-        apiKeyDebugStatus.className = apiKey ? 'success' : '';
-    }
-}
-
-/**
- * Set active debug tab
- * @param {string} tabName - Name of the tab to activate
- */
-function setActiveDebugTab(tabName) {
-    // Update tab buttons
-    debugTabs.forEach(tab => {
-        if (tab.dataset.tab === tabName) {
-            tab.classList.add('active');
-        } else {
-            tab.classList.remove('active');
-        }
-    });
-    
-    // Update tab content
-    document.querySelectorAll('.debug-tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    document.getElementById(`debug-${tabName}`).classList.add('active');
-}
-
-/**
- * Log a message to the debug panel
- * @param {string} message - Message to log
- * @param {string} level - Log level ('info', 'warning', 'error', 'success')
- */
-function logToDebug(message, level = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = document.createElement('div');
-    logEntry.className = `log-entry log-${level}`;
-    logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-level">[${level.toUpperCase()}]</span> ${message}`;
-    
-    debugLogs.insertBefore(logEntry, debugLogs.firstChild);
-    
-    // Also log to console
-    console.log(`[${level.toUpperCase()}] ${message}`);
-}
-
-/**
- * Clear debug logs
- */
-function clearLogs() {
-    debugLogs.innerHTML = '<div class="log-entry">Debug logs cleared...</div>';
-    logToDebug('Logs cleared', 'info');
-}
-
-/**
- * Download the current file
- */
-function downloadCurrentFile() {
-    let filename = '';
-    let content = '';
-    let contentType = '';
-    
-    switch (currentTab) {
-        case 'html':
-            filename = 'index.html';
-            content = htmlEditor.value;
-            contentType = 'text/html';
-            break;
-        case 'css':
-            filename = 'styles.css';
-            content = cssEditor.value;
-            contentType = 'text/css';
-            break;
-        case 'js':
-            filename = 'script.js';
-            content = jsEditor.value;
-            contentType = 'text/javascript';
-            break;
-    }
-    
-    downloadFile(filename, content, contentType);
-    logToDebug(`Downloaded ${filename}`, 'info');
-}
-
-/**
- * Download the entire project as a ZIP file
- */
-function downloadProject() {
-    try {
-        // Create a new JSZip instance
-        const zip = new JSZip();
-        
-        // Add files to the zip
-        zip.file('index.html', htmlEditor.value);
-        zip.file('styles.css', cssEditor.value);
-        zip.file('script.js', jsEditor.value);
-        
-        // Generate the zip file
-        zip.generateAsync({ type: 'blob' })
-            .then(function(content) {
-                // Download the zip file
-                const url = URL.createObjectURL(content);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'web-project.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-                
-                logToDebug('Project downloaded as ZIP', 'success');
-            });
-    } catch (error) {
-        logToDebug(`Error downloading project: ${error.message}`, 'error');
-    }
-}
-
-/**
- * Export content in various formats
- * @param {string} format - Export format ('html', 'css', 'js', or 'zip')
- */
-function exportContent(format) {
-    const htmlContent = htmlEditor.value;
-    const cssContent = cssEditor.value;
-    const jsContent = jsEditor.value;
-    const filename = `web-project-${new Date().toISOString().slice(0, 10)}`;
-    
-    switch (format) {
-        case 'html':
-            downloadFile(`${filename}.html`, htmlContent, 'text/html');
-            logToDebug('HTML code exported', 'info');
-            break;
             
-        case 'css':
-            downloadFile(`${filename}.css`, cssContent, 'text/css');
-            logToDebug('CSS code exported', 'info');
-            break;
-            
-        case 'js':
-            downloadFile(`${filename}.js`, jsContent, 'text/javascript');
-            logToDebug('JavaScript code exported', 'info');
-            break;
-            
-        case 'zip':
-            downloadProject();
-            break;
-    }
-}
-
-/**
- * Download a file
- * @param {string} filename - Name of the file
- * @param {string} content - Content of the file
- * @param {string} contentType - MIME type of the file
- */
-function downloadFile(filename, content, contentType) {
-    const blob = new Blob([content], { type: contentType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-/**
- * Fetch with retry logic for transient errors
- * @param {string} url - URL to fetch
- * @param {Object} options - Fetch options
- * @param {number} retries - Number of retries
- * @returns {Promise<Response>} Fetch response
- */
-async function fetchWithRetry(url, options, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-            
-            if (response.ok) return response;
-            
-            if (response.status === 401) {
-                logToDebug('API Key is invalid or missing. Please check your OpenRouter account.', 'error');
-                throw new Error('Authentication failed (401)');
-            } else if (response.status === 429) {
-                const retryAfter = response.headers.get('Retry-After') || 1;
-                logToDebug(`Rate limit exceeded. Retrying in ${retryAfter}s...`, 'warning');
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                continue;
-            } else {
-                const errorText = await response.text();
-                throw new Error(`API error (${response.status}): ${errorText}`);
-            }
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            logToDebug(`Fetch attempt ${i + 1} failed: ${error.message}. Retrying...`, 'warning');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    }
-    throw new Error('Max retries reached');
-}
-
-/**
- * Debounce function to limit the rate of function calls
- * @param {Function} func - Function to debounce
- * @param {number} wait - Wait time in milliseconds
- * @returns {Function} Debounced function
- */
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
-}
-
-/**
- * Add animation effects using GSAP
- */
-function addAnimationEffects() {
-    if (window.gsap) {
-        // Animate header
-        gsap.from('header', { 
-            y: -50, 
-            opacity: 0, 
-            duration: 1, 
-            ease: 'power3.out' 
-        });
-        
-        // Animate panes
-        gsap.from('.pane', { 
-            y: 50, 
-            opacity: 0, 
-            duration: 1, 
-            stagger: 0.2, 
-            ease: 'back.out(1.7)' 
-        });
-        
-        // Animate buttons
-        gsap.from('.neon-btn', { 
-            scale: 0.8, 
-            opacity: 0, 
-            duration: 0.5, 
-            stagger: 0.1, 
-            ease: 'power2.out',
-            delay: 0.5
-        });
-        
-        // Add hover animations for buttons
-        document.querySelectorAll('.neon-btn').forEach(btn => {
-            btn.addEventListener('mouseenter', () => {
-                gsap.to(btn, { 
-                    scale: 1.05, 
-                    duration: 0.2, 
-                    ease: 'power1.out' 
-                });
-            });
-            
-            btn.addEventListener('mouseleave', () => {
-                gsap.to(btn, { 
-                    scale: 1, 
-                    duration: 0.2, 
-                    ease: 'power1.in' 
-                });
-            });
+            // Hide the menu after action
+            contextMenu.classList.add('hidden');
         });
     }
-}
-
-/**
- * Expose Editor API for external use
- */
-function exposeEditorAPI() {
-    window.EditorAPI = {
-        // Get editor content
-        getHTML: () => htmlEditor.value,
-        getCSS: () => cssEditor.value,
-        getJS: () => jsEditor.value,
-        
-        // Set editor content
-        setHTML: (content) => {
-            htmlEditor.value = content;
-            updatePreview();
-        },
-        setCSS: (content) => {
-            cssEditor.value = content;
-            updatePreview();
-        },
-        setJS: (content) => {
-            jsEditor.value = content;
-            updatePreview();
-        },
-        
-        // Switch tabs
-        switchTab: switchTab,
-        
-        // Switch modes
-        switchMode: switchMode,
-        
-        // API key management
-        setApiKey: (key) => {
-            apiKey = key;
-            apiKeyInput.value = key;
-            updateApiKeyStatus(true);
-        },
-        
-        // Chat and agent functions
-        sendChatMessage: (message) => {
-            chatInput.value = message;
-            sendChatMessage();
-        },
-        executeAgentAction: (instruction) => {
-            agentInput.value = instruction;
-            executeAgentAction();
-        },
-        
-        // Enhance code
-        enhance: enhanceCode,
-        
-        // Export content
-        export: exportContent,
-        
-        // Add custom model
-        addModel: (id, name) => {
-            models.push({ id, name });
-            const option = document.createElement('option');
-            option.value = id;
-            option.textContent = name;
-            modelSelector.appendChild(option);
-        }
-    };
     
-    logToDebug('Editor API exposed as window.EditorAPI', 'info');
-}
-
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
-
-// Add CSS for typing indicator
-const style = document.createElement('style');
-style.textContent = `
-.typing-dots {
-    display: flex;
-    gap: 4px;
-}
-
-.typing-dots span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: var(--accent-pink);
-    animation: typing-dot 1.4s infinite ease-in-out both;
-}
-
-.typing-dots span:nth-child(1) {
-    animation-delay: -0.32s;
-}
-
-.typing-dots span:nth-child(2) {
-    animation-delay: -0.16s;
-}
-
-@keyframes typing-dot {
-    0%, 80%, 100% { 
-        transform: scale(0);
-    } 
-    40% { 
-        transform: scale(1.0);
+    // New file button
+    if (newFileBtn) {
+        newFileBtn.addEventListener('click', createNewFile);
     }
+    
+    // Log setup completion
+    logToDebug('File explorer functionality initialized', 'info');
 }
-`;
-document.head.appendChild(style);
