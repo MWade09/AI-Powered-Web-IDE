@@ -98,15 +98,12 @@ const exportZip = document.getElementById('export-zip');
  * Initialize the application
  */
 function init() {
-    // Start with API key modal hidden - no API key required to use the editor
-    apiKeyModal.classList.add('hidden');
-    apiKeyModal.style.display = 'none';
-    
+    // Show the API key modal initially
+    apiKeyModal.classList.remove('hidden'); // Ensure it's not hidden by class
+    apiKeyModal.style.display = 'flex'; // Use flex as defined in CSS for modals
+
     // Make Agent Mode panel visible by default (remove hidden class)
     agentSection.classList.remove('hidden');
-    
-    // Set editor as fully functional without AI features
-    updateApiKeyStatus(false);
     
     // Set up event listeners for API key
     apiKeyInput.addEventListener('input', validateApiKey);
@@ -420,10 +417,6 @@ function updateApiKeyStatus(isValid) {
         enhanceBtn.disabled = true;
         sendChatBtn.disabled = true;
         executeAgentBtn.disabled = true;
-        
-        // Make sure the modal is completely gone
-        apiKeyModal.classList.add('hidden');
-        apiKeyModal.style.display = 'none';
     }
     
     // Ensure editor functionality works regardless of API key status
@@ -1316,18 +1309,26 @@ function addAnimationEffects() {
             ease: 'back.out(1.7)' 
         });
         
-        // Animate buttons
-        gsap.from('.neon-btn', { 
+        // Animate ALL neon buttons initially
+        gsap.from('.neon-btn', { // Target all neon buttons first
             scale: 0.8, 
             opacity: 0, 
             duration: 0.5, 
             stagger: 0.1, 
             ease: 'power2.out',
-            delay: 0.5
+            delay: 0.5,
+            clearProps: "opacity,transform" // Keep this to clean up after animation
+        });
+
+        // IMMEDIATELY override the animation for modal buttons, forcing them visible
+        gsap.set('.modal .neon-btn', { 
+            opacity: 1, 
+            scale: 1, 
+            clearProps: "all" // Clear any conflicting props GSAP might have set
         });
         
-        // Add hover animations for buttons
-        document.querySelectorAll('.neon-btn').forEach(btn => {
+        // Add hover animations for buttons (excluding modal buttons for consistency)
+        document.querySelectorAll('.neon-btn:not(.modal .neon-btn)').forEach(btn => {
             btn.addEventListener('mouseenter', () => {
                 gsap.to(btn, { 
                     scale: 1.05, 
