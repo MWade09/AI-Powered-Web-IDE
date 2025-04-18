@@ -13,7 +13,16 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- CodeMirror 6 CDN Links Removed - Will be imported in script.js -->
+    <!-- CodeMirror 6 CDN Links (Restored) -->
+    <script src="https://unpkg.com/@codemirror/state@6.4.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/view@6.26.3/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/commands@6.5.0/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/language@6.10.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-html@6.4.9/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-css@6.2.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-javascript@6.2.2/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/theme-one-dark@6.1.2/dist/index.js"></script>
+    <!-- End CodeMirror Links -->
     
 </head>
 <body>
@@ -303,6 +312,6 @@
     
     <!-- Main scripts -->
     <script src="api-key-info.js"></script>
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
