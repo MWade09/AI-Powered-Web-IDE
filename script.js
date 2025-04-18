@@ -5,6 +5,16 @@
  * real-time preview, OpenRouter API integration, and dual-mode AI assistance.
  */
 
+// Import CodeMirror modules dynamically
+import { EditorState } from "https://unpkg.com/@codemirror/state@6.4.1/dist/index.js";
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } from "https://unpkg.com/@codemirror/view@6.26.3/dist/index.js";
+import { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } from "https://unpkg.com/@codemirror/commands@6.5.0/dist/index.js";
+import { language } from "https://unpkg.com/@codemirror/language@6.10.1/dist/index.js";
+import { html } from "https://unpkg.com/@codemirror/lang-html@6.4.9/dist/index.js";
+import { css } from "https://unpkg.com/@codemirror/lang-css@6.2.1/dist/index.js";
+import { javascript } from "https://unpkg.com/@codemirror/lang-javascript@6.2.2/dist/index.js";
+import { oneDark } from "https://unpkg.com/@codemirror/theme-one-dark@6.1.2/dist/index.js";
+
 // Global variables
 let models = [
     { id: 'openrouter/qwen/qwen-2-7b-instruct:free', name: 'Qwen 2 7B (Free)' },
@@ -189,15 +199,6 @@ function init() {
     });
 
     // Initialize CodeMirror Editors
-    const { EditorState } = CodeMirror.state;
-    const { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } = CodeMirror.view;
-    const { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } = CodeMirror.commands;
-    const { language } = CodeMirror.language;
-    const { html } = CodeMirror.lang_html;
-    const { css } = CodeMirror.lang_css;
-    const { javascript } = CodeMirror.lang_javascript;
-    const { oneDark } = CodeMirror.theme_one_dark;
-
     const commonExtensions = [
         lineNumbers(),
         highlightActiveLineGutter(),
@@ -383,6 +384,7 @@ function showApiKeyModal() {
  * Continue without an API key
  */
 function continueWithoutKey() {
+    logToDebug('continueWithoutKey function called', 'info'); // Added log
     apiKeyModal.classList.add('hidden');
     logToDebug('Continuing without API key. AI features will be disabled.', 'warning');
     updateApiKeyStatus(false);
@@ -438,6 +440,7 @@ function saveApiKey() {
  * Save the API key from the modal
  */
 function saveModalApiKey() {
+    logToDebug('saveModalApiKey function called', 'info'); // Added log
     const key = modalApiKeyInput.value.trim();
     if (key) {
         if (validateApiKey({ target: modalApiKeyInput })) {
@@ -445,12 +448,14 @@ function saveModalApiKey() {
             apiKeyInput.value = key;
             updateApiKeyStatus(true);
             apiKeyModal.classList.add('hidden');
-            logToDebug('API key saved successfully', 'success');
+            logToDebug('API key saved successfully from modal', 'success'); // Updated log message
         } else {
-            logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
+            logToDebug('Invalid API key format in modal. Keys typically start with "sk-"', 'error'); // Updated log message
         }
     } else {
-        continueWithoutKey();
+        // If key is empty, treat it like skipping
+        logToDebug('API key field in modal is empty, treating as skip.', 'warning');
+        continueWithoutKey(); 
     }
 }
 
