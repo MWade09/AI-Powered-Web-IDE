@@ -12,6 +12,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CodeMirror 6 CDN Links -->
+    <script src="https://unpkg.com/@codemirror/state@6.4.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/view@6.26.3/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/commands@6.5.0/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/language@6.10.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-html@6.4.9/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-css@6.2.1/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/lang-javascript@6.2.2/dist/index.js"></script>
+    <script src="https://unpkg.com/@codemirror/theme-one-dark@6.1.2/dist/index.js"></script>
+    <!-- End CodeMirror Links -->
 </head>
 <body>
     <div class="container">
@@ -124,13 +135,13 @@
                 <div class="editor-container">
                     <div class="pane editor-pane">
                         <div id="html-editor" class="code-editor active">
-                            <textarea id="html-code" placeholder="Enter your HTML code here..."></textarea>
+                            <div id="html-editor-cm"></div> <!-- CodeMirror container -->
                         </div>
                         <div id="css-editor" class="code-editor">
-                            <textarea id="css-code" placeholder="Enter your CSS code here..."></textarea>
+                            <div id="css-editor-cm"></div> <!-- CodeMirror container -->
                         </div>
                         <div id="js-editor" class="code-editor">
-                            <textarea id="js-code" placeholder="Enter your JavaScript code here..."></textarea>
+                            <div id="js-editor-cm"></div> <!-- CodeMirror container -->
                         </div>
                     </div>
                     <div class="pane preview-pane">
@@ -300,6 +311,6 @@
     
     <!-- Main scripts -->
     <script src="api-key-info.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

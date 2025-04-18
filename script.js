@@ -22,10 +22,10 @@ let currentTab = 'html';
 let currentMode = 'chat';
 let apiKey = '';
 
+// CodeMirror Editor Instances
+let htmlEditorView, cssEditorView, jsEditorView;
+
 // DOM Elements - Main UI
-const htmlEditor = document.getElementById('html-code');
-const cssEditor = document.getElementById('css-code');
-const jsEditor = document.getElementById('js-code');
 const previewFrame = document.getElementById('preview-frame');
 const htmlTab = document.getElementById('html-tab');
 const cssTab = document.getElementById('css-tab');
@@ -120,9 +120,6 @@ function init() {
     agentModeBtn.addEventListener('click', () => switchMode('agent'));
     
     // Set up event listeners for editor
-    htmlEditor.addEventListener('input', debounce(updatePreview, 300));
-    cssEditor.addEventListener('input', debounce(updatePreview, 300));
-    jsEditor.addEventListener('input', debounce(updatePreview, 300));
     refreshPreviewBtn.addEventListener('click', updatePreview);
     
     // Set up event listeners for tabs
@@ -191,17 +188,55 @@ function init() {
         });
     });
 
-    // Add sample code if editors are empty
-    if (htmlEditor.value.trim() === '') {
-        htmlEditor.value = `<!DOCTYPE html>
+    // Initialize CodeMirror Editors
+    const { EditorState } = CodeMirror.state;
+    const { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } = CodeMirror.view;
+    const { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } = CodeMirror.commands;
+    const { language } = CodeMirror.language;
+    const { html } = CodeMirror.lang_html;
+    const { css } = CodeMirror.lang_css;
+    const { javascript } = CodeMirror.lang_javascript;
+    const { oneDark } = CodeMirror.theme_one_dark;
+
+    const commonExtensions = [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightSpecialChars(),
+        history(),
+        foldGutter(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightActiveLine(),
+        highlightSelectionMatches(),
+        keymap.of([
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...foldKeymap,
+            ...completionKeymap,
+            ...lintKeymap
+        ]),
+        oneDark, // Apply the dark theme
+        EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+                debouncedUpdatePreview();
+            }
+        })
+    ];
+
+    // Debounced preview function
+    const debouncedUpdatePreview = debounce(updatePreview, 300);
+
+    // Sample Code (moved here for easier access during initialization)
+    const sampleHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Web Page</title>
-    <style>
-        /* CSS will be injected here */
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
@@ -221,15 +256,11 @@ function init() {
         <button id="demo-button">Click Me!</button>
     </div>
     
-    <script>
-        /* JavaScript will be injected here */
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>`;
-    }
-    
-    if (cssEditor.value.trim() === '') {
-        cssEditor.value = `/* Sample CSS */
+
+    const sampleCss = `/* Sample CSS */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
@@ -274,27 +305,62 @@ button {
 button:hover {
     background-color: #2980b9;
 }`;
-    }
-    
-    if (jsEditor.value.trim() === '') {
-        jsEditor.value = `// Sample JavaScript
+
+    const sampleJs = `// Sample JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Get the button element
     const button = document.getElementById('demo-button');
     
     // Add click event listener
-    button.addEventListener('click', function() {
-        alert('Button clicked! This is the JavaScript in action.');
-    });
+    if (button) { // Check if button exists
+        button.addEventListener('click', function() {
+            alert('Button clicked! This is the JavaScript in action.');
+        });
+    }
     
     // Log a message to the console
     console.log('JavaScript initialized successfully!');
 });`;
-    }
-    
+
+    // HTML Editor
+    htmlEditorView = new EditorView({
+        state: EditorState.create({
+            doc: sampleHtml,
+            extensions: [
+                ...commonExtensions,
+                html()
+            ]
+        }),
+        parent: document.getElementById('html-editor-cm')
+    });
+
+    // CSS Editor
+    cssEditorView = new EditorView({
+        state: EditorState.create({
+            doc: sampleCss,
+            extensions: [
+                ...commonExtensions,
+                css()
+            ]
+        }),
+        parent: document.getElementById('css-editor-cm')
+    });
+
+    // JavaScript Editor
+    jsEditorView = new EditorView({
+        state: EditorState.create({
+            doc: sampleJs,
+            extensions: [
+                ...commonExtensions,
+                javascript()
+            ]
+        }),
+        parent: document.getElementById('js-editor-cm')
+    });
+
     // Initial preview update
     updatePreview();
-    
+
     // Log initialization
     logToDebug('Editor initialized successfully', 'info');
     
@@ -479,9 +545,9 @@ function switchTab(tab) {
 function updatePreview() {
     try {
         // Get the HTML, CSS, and JS code
-        const htmlCode = htmlEditor.value;
-        const cssCode = cssEditor.value;
-        const jsCode = jsEditor.value;
+        const htmlCode = htmlEditorView.state.doc.toString();
+        const cssCode = cssEditorView.state.doc.toString();
+        const jsCode = jsEditorView.state.doc.toString();
         
         // Create a complete HTML document
         let previewContent = htmlCode;
@@ -520,13 +586,16 @@ function updatePreview() {
  * Send a chat message to the AI
  */
 async function sendChatMessage() {
+    logToDebug('sendChatMessage function started', 'info'); // Added log
     if (!apiKey) {
         logToDebug('API key is required to use chat', 'error');
         return;
     }
     
     const message = chatInput.value.trim();
+    logToDebug(`Chat input value: "${message}"`, 'info'); // Added log
     if (!message) {
+        logToDebug('Chat message is empty, returning.', 'info'); // Added log
         return;
     }
     
@@ -537,11 +606,19 @@ async function sendChatMessage() {
     chatInput.value = '';
     
     // Get current code context
-    const codeContext = {
-        html: htmlEditor.value,
-        css: cssEditor.value,
-        js: jsEditor.value
-    };
+    let codeContext = {};
+    try {
+        codeContext = {
+            html: htmlEditorView.state.doc.toString(),
+            css: cssEditorView.state.doc.toString(),
+            js: jsEditorView.state.doc.toString()
+        };
+        logToDebug('Successfully retrieved code context for chat.', 'info'); // Added log
+    } catch (error) {
+        logToDebug(`Error getting code context for chat: ${error}`, 'error');
+        addMessageToChat('system', `Error getting code context: ${error.message}`);
+        return; // Stop if context fails
+    }
     
     // Disable send button
     sendChatBtn.disabled = true;
@@ -553,11 +630,28 @@ async function sendChatMessage() {
         const selectedModel = modelSelector.value;
         const modelName = modelSelector.options[modelSelector.selectedIndex].text;
         
-        logToDebug(`Sending chat message to ${modelName}`, 'info');
+        logToDebug(`Preparing to send chat message to ${modelName}`, 'info'); // Added log
         
         const startTime = Date.now();
         
-        // Prepare the API request
+        // Prepare the API request payload
+        const payload = {
+            model: selectedModel,
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a helpful web development assistant...` // Content truncated for brevity
+                },
+                {
+                    role: 'user',
+                    content: message
+                }
+            ]
+        };
+        logToDebug(`API Payload: ${JSON.stringify(payload, null, 2)}`, 'info'); // Added log
+
+        // Make the API call
+        logToDebug('Attempting API call...', 'info'); // Added log
         const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -566,27 +660,9 @@ async function sendChatMessage() {
                 'HTTP-Referer': window.location.href,
                 'X-Title': 'Advanced Web IDE'
             },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are a helpful web development assistant in a code editor environment. The user is working on a web project with HTML, CSS, and JavaScript. 
-                        
-Current code context:
-HTML: ${codeContext.html.length > 500 ? codeContext.html.substring(0, 500) + '...' : codeContext.html}
-CSS: ${codeContext.css.length > 500 ? codeContext.css.substring(0, 500) + '...' : codeContext.css}
-JS: ${codeContext.js.length > 500 ? codeContext.js.substring(0, 500) + '...' : codeContext.js}
-
-Provide helpful advice, answer questions, and suggest improvements. You can provide code snippets when relevant. This is Chat Mode, so you should not directly modify the user's code - instead, explain concepts and provide examples that the user can implement themselves.`
-                    },
-                    {
-                        role: 'user',
-                        content: message
-                    }
-                ]
-            })
+            body: JSON.stringify(payload)
         });
+        logToDebug('API call fetch completed.', 'info'); // Added log
         
         if (!response.ok) {
             throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -619,124 +695,39 @@ Provide helpful advice, answer questions, and suggest improvements. You can prov
 }
 
 /**
- * Add a message to the chat
- * @param {string} role - Role of the message sender ('user', 'ai', or 'system')
- * @param {string} content - Content of the message
- */
-function addMessageToChat(role, content) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${role}-message`;
-    
-    // Format code blocks in the content
-    content = formatCodeBlocks(content);
-    
-    if (role === 'system') {
-        messageDiv.innerHTML = `
-            <div class="message-content">${content}</div>
-        `;
-    } else {
-        const avatar = role === 'user' ? 
-            '<div class="message-avatar"><i class="fas fa-user"></i></div>' : 
-            '<div class="message-avatar"><i class="fas fa-robot"></i></div>';
-        
-        messageDiv.innerHTML = `
-            ${avatar}
-            <div class="message-content">${content}</div>
-        `;
-    }
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Apply syntax highlighting to code blocks
-    if (window.Prism) {
-        Prism.highlightAllUnder(messageDiv);
-    }
-}
-
-/**
- * Format code blocks in message content
- * @param {string} content - Message content
- * @returns {string} Formatted content with HTML code blocks
- */
-function formatCodeBlocks(content) {
-    // Replace ```language\ncode``` with <pre><code class="language-*">code</code></pre>
-    content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
-        const lang = language || 'plaintext';
-        return `<pre><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
-    });
-    
-    // Replace inline `code` with <code>code</code>
-    content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    return content;
-}
-
-/**
- * Escape HTML special characters
- * @param {string} html - HTML string to escape
- * @returns {string} Escaped HTML string
- */
-function escapeHtml(html) {
-    const div = document.createElement('div');
-    div.textContent = html;
-    return div.innerHTML;
-}
-
-/**
- * Add typing indicator to chat
- */
-function addTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message ai-message typing-indicator';
-    typingDiv.innerHTML = `
-        <div class="message-avatar"><i class="fas fa-robot"></i></div>
-        <div class="message-content">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    `;
-    typingDiv.id = 'typing-indicator';
-    chatMessages.appendChild(typingDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Remove typing indicator from chat
- */
-function removeTypingIndicator() {
-    const typingIndicator = document.getElementById('typing-indicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-/**
  * Execute agent action to modify code
  */
 async function executeAgentAction() {
+    logToDebug('executeAgentAction function started', 'info'); // Added log
     if (!apiKey) {
         logToDebug('API key is required to use agent mode', 'error');
         return;
     }
     
     const instruction = agentInput.value.trim();
+    logToDebug(`Agent instruction: "${instruction}"`, 'info'); // Added log
     if (!instruction) {
+        logToDebug('Agent instruction is empty, returning.', 'info'); // Added log
         return;
     }
     
     // Get target files
     const target = agentTarget.value;
+    logToDebug(`Agent target: ${target}`, 'info'); // Added log
     
     // Get current code
-    const codeContext = {
-        html: htmlEditor.value,
-        css: cssEditor.value,
-        js: jsEditor.value
-    };
+    let codeContext = {};
+    try {
+        codeContext = {
+            html: htmlEditorView.state.doc.toString(),
+            css: cssEditorView.state.doc.toString(),
+            js: jsEditorView.state.doc.toString()
+        };
+        logToDebug('Successfully retrieved code context for agent.', 'info'); // Added log
+    } catch (error) {
+        logToDebug(`Error getting code context for agent: ${error}`, 'error');
+        return; // Stop if context fails
+    }
     
     // Disable execute button
     executeAgentBtn.disabled = true;
@@ -749,11 +740,28 @@ async function executeAgentAction() {
         const selectedModel = modelSelector.value;
         const modelName = modelSelector.options[modelSelector.selectedIndex].text;
         
-        logToDebug(`Executing agent action with ${modelName}`, 'info');
+        logToDebug(`Preparing to execute agent action with ${modelName}`, 'info'); // Added log
         
         const startTime = Date.now();
         
-        // Prepare the API request
+        // Prepare the API request payload
+        const payload = {
+            model: selectedModel,
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are an AI agent that directly modifies code...` // Content truncated
+                },
+                {
+                    role: 'user',
+                    content: instruction
+                }
+            ]
+        };
+        logToDebug(`API Payload: ${JSON.stringify(payload, null, 2)}`, 'info'); // Added log
+
+        // Make the API call
+        logToDebug('Attempting API call...', 'info'); // Added log
         const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -762,46 +770,10 @@ async function executeAgentAction() {
                 'HTTP-Referer': window.location.href,
                 'X-Title': 'Advanced Web IDE'
             },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: [
-                    {
-                        role: 'system',
-                        content: `You are an AI agent that directly modifies code in a web development environment. The user will provide instructions, and you should return the modified code files based on those instructions.
-
-Current code:
-${target === 'all' || target === 'html' ? `HTML:\n${codeContext.html}\n\n` : ''}
-${target === 'all' || target === 'css' ? `CSS:\n${codeContext.css}\n\n` : ''}
-${target === 'all' || target === 'js' ? `JavaScript:\n${codeContext.js}\n\n` : ''}
-
-Instructions:
-1. Analyze the user's request and the current code
-2. Make the requested changes to the code
-3. Return ONLY the complete modified code files with no explanations
-4. Use the following format for your response:
-
-\`\`\`html
-[Complete HTML code here]
-\`\`\`
-
-\`\`\`css
-[Complete CSS code here]
-\`\`\`
-
-\`\`\`javascript
-[Complete JavaScript code here]
-\`\`\`
-
-Only include the code blocks for files that you've modified. If you haven't changed a file, don't include it in your response.`
-                    },
-                    {
-                        role: 'user',
-                        content: instruction
-                    }
-                ]
-            })
+            body: JSON.stringify(payload)
         });
-        
+        logToDebug('API call fetch completed.', 'info'); // Added log
+
         if (!response.ok) {
             throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
@@ -816,17 +788,23 @@ Only include the code blocks for files that you've modified. If you haven't chan
         
         // Update code editors with extracted code
         if (htmlMatch && (target === 'all' || target === 'html')) {
-            htmlEditor.value = htmlMatch[1];
+            htmlEditorView.dispatch({
+                changes: { from: 0, to: htmlEditorView.state.doc.length, insert: htmlMatch[1] }
+            });
             logToDebug('HTML code updated by agent', 'success');
         }
         
         if (cssMatch && (target === 'all' || target === 'css')) {
-            cssEditor.value = cssMatch[1];
+            cssEditorView.dispatch({
+                changes: { from: 0, to: cssEditorView.state.doc.length, insert: cssMatch[1] }
+            });
             logToDebug('CSS code updated by agent', 'success');
         }
         
         if (jsMatch && (target === 'all' || target === 'js')) {
-            jsEditor.value = jsMatch[1];
+            jsEditorView.dispatch({
+                changes: { from: 0, to: jsEditorView.state.doc.length, insert: jsMatch[1] }
+            });
             logToDebug('JavaScript code updated by agent', 'success');
         }
         
@@ -872,18 +850,18 @@ async function enhanceCode() {
     
     switch (currentTab) {
         case 'html':
-            codeToEnhance = htmlEditor.value.trim();
-            editorToUpdate = htmlEditor;
+            codeToEnhance = htmlEditorView.state.doc.toString();
+            editorToUpdate = htmlEditorView;
             codeType = 'HTML';
             break;
         case 'css':
-            codeToEnhance = cssEditor.value.trim();
-            editorToUpdate = cssEditor;
+            codeToEnhance = cssEditorView.state.doc.toString();
+            editorToUpdate = cssEditorView;
             codeType = 'CSS';
             break;
         case 'js':
-            codeToEnhance = jsEditor.value.trim();
-            editorToUpdate = jsEditor;
+            codeToEnhance = jsEditorView.state.doc.toString();
+            editorToUpdate = jsEditorView;
             codeType = 'JavaScript';
             break;
     }
@@ -939,7 +917,9 @@ async function enhanceCode() {
         let enhancedCode = '';
         
         // Clear the editor for streaming effect
-        editorToUpdate.value = '';
+        editorToUpdate.dispatch({
+            changes: { from: 0, to: editorToUpdate.state.doc.length, insert: '' }
+        });
         
         while (true) {
             const { done, value } = await reader.read();
@@ -956,7 +936,9 @@ async function enhanceCode() {
                         if (data.choices && data.choices[0].delta.content) {
                             const content = data.choices[0].delta.content;
                             enhancedCode += content;
-                            editorToUpdate.value += content;
+                            editorToUpdate.dispatch({
+                                changes: { from: editorToUpdate.state.doc.length, insert: content }
+                            });
                         }
                     } catch (e) {
                         // Skip invalid JSON
@@ -975,11 +957,6 @@ async function enhanceCode() {
         logToDebug(`${codeType} enhancement completed in ${responseTime}ms`, 'success');
     } catch (error) {
         logToDebug(`Error enhancing ${codeType} code: ${error.message}`, 'error');
-        
-        // Show error in editor if it's empty (API failed before streaming)
-        if (editorToUpdate.value === '') {
-            editorToUpdate.value = codeToEnhance;
-        }
     } finally {
         isStreaming = false;
         enhanceBtn.disabled = apiKey ? false : true;
@@ -1139,17 +1116,17 @@ function downloadCurrentFile() {
     switch (currentTab) {
         case 'html':
             filename = 'index.html';
-            content = htmlEditor.value;
+            content = htmlEditorView.state.doc.toString();
             contentType = 'text/html';
             break;
         case 'css':
             filename = 'styles.css';
-            content = cssEditor.value;
+            content = cssEditorView.state.doc.toString();
             contentType = 'text/css';
             break;
         case 'js':
             filename = 'script.js';
-            content = jsEditor.value;
+            content = jsEditorView.state.doc.toString();
             contentType = 'text/javascript';
             break;
     }
@@ -1167,9 +1144,9 @@ function downloadProject() {
         const zip = new JSZip();
         
         // Add files to the zip
-        zip.file('index.html', htmlEditor.value);
-        zip.file('styles.css', cssEditor.value);
-        zip.file('script.js', jsEditor.value);
+        zip.file('index.html', htmlEditorView.state.doc.toString());
+        zip.file('styles.css', cssEditorView.state.doc.toString());
+        zip.file('script.js', jsEditorView.state.doc.toString());
         
         // Generate the zip file
         zip.generateAsync({ type: 'blob' })
@@ -1194,9 +1171,9 @@ function downloadProject() {
  * @param {string} format - Export format ('html', 'css', 'js', or 'zip')
  */
 function exportContent(format) {
-    const htmlContent = htmlEditor.value;
-    const cssContent = cssEditor.value;
-    const jsContent = jsEditor.value;
+    const htmlContent = htmlEditorView.state.doc.toString();
+    const cssContent = cssEditorView.state.doc.toString();
+    const jsContent = jsEditorView.state.doc.toString();
     const filename = `web-project-${new Date().toISOString().slice(0, 10)}`;
     
     switch (format) {
@@ -1354,21 +1331,27 @@ function addAnimationEffects() {
 function exposeEditorAPI() {
     window.EditorAPI = {
         // Get editor content
-        getHTML: () => htmlEditor.value,
-        getCSS: () => cssEditor.value,
-        getJS: () => jsEditor.value,
+        getHTML: () => htmlEditorView.state.doc.toString(),
+        getCSS: () => cssEditorView.state.doc.toString(),
+        getJS: () => jsEditorView.state.doc.toString(),
         
         // Set editor content
         setHTML: (content) => {
-            htmlEditor.value = content;
+            htmlEditorView.dispatch({
+                changes: { from: 0, to: htmlEditorView.state.doc.length, insert: content }
+            });
             updatePreview();
         },
         setCSS: (content) => {
-            cssEditor.value = content;
+            cssEditorView.dispatch({
+                changes: { from: 0, to: cssEditorView.state.doc.length, insert: content }
+            });
             updatePreview();
         },
         setJS: (content) => {
-            jsEditor.value = content;
+            jsEditorView.dispatch({
+                changes: { from: 0, to: jsEditorView.state.doc.length, insert: content }
+            });
             updatePreview();
         },
         

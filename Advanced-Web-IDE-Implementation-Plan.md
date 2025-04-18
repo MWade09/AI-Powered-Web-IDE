@@ -15,17 +15,17 @@
 
 | Task ID | Description                                                                 | File(s) Involved                                                                 | Status      | Notes                                                                                                                               |
 | :------ | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------- | :---------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| `V-01`  | Restore Initial API Key Modal                                               | `script.js`     | **In Progress** | Modify the `init` function to *not* hide `#api-key-modal` on load.                                                                  |
-| `V-02`  | Debug "Save API Key" Button Visibility                                      | `styles.css`   | To Do       | Inspect CSS rules affecting `#save-api-key`. Check for `opacity`, `visibility`, `display`, `z-index`, positioning conflicts.        |
-| `V-03`  | Debug File Download Buttons Visibility                                      | `styles.css`   | To Do       | Inspect CSS rules affecting `#download-file` and `#download-project` in the `.file-explorer`.                                       |
-| `V-04`  | Debug Export Button / Dropdown Visibility                                   | `styles.css`   | To Do       | Ensure the main `#export-btn` is visible. Verify the `:hover` state on `.export-dropdown` correctly sets `display: flex` for `.export-options`. |
-| `V-05`  | Adjust Disabled Button Styling (If Needed)                                  | `styles.css`   | To Do       | If disabled buttons are too faint, adjust the `opacity` in the `.neon-btn:disabled` rule (e.g., to `0.6` or `0.7`).                 |
-| `T-01`  | Test Core Functionality                                                     | N/A                                                                              | To Do       | Verify modal appears, buttons are visible/appropriately disabled, export hover works after fixes.                                   |
+| `V-01`  | Restore Initial API Key Modal                                               | `script.js`     | **Done** | Modified the `init` function to *not* hide `#api-key-modal` on load.                                                                  |
+| `V-02`  | Debug "Save API Key" Button Visibility                                      | `styles.css`   | **Done**       | Ensured visibility via general button rules and specific `#save-api-key` rule.                                       |
+| `V-03`  | Debug File Download Buttons Visibility                                      | `styles.css`   | **Done**       | Removed responsive hiding, added explicit visibility/opacity to `.icon-btn`.                                       |
+| `V-04`  | Debug Export Button / Dropdown Visibility                                   | `styles.css`   | **Done**       | Added `z-index` to `.export-dropdown` parent container to ensure it appears above file explorer. |
+| `V-05`  | Adjust Disabled Button Styling (If Needed)                                  | `styles.css`   | **Done**       | Increased `opacity` in the `.neon-btn:disabled` rule to `0.6`.                 |
+| `T-01`  | Test Core Functionality                                                     | N/A                                                                              | **Done**       | User confirmed modal appears, buttons are visible/appropriately disabled, export hover works.                                   |
 
 **Phase 2: Future Enhancements (Post-Fix)**
 
 | Task ID | Description                     | File(s) Involved | Status      | Notes                                      |
 | :------ | :------------------------------ | :--------------- | :---------- | :----------------------------------------- |
-| `F-01`  | Plan Multi-Language Support     | N/A              | Future      | Research editor libraries, syntax handling |
+| `F-01`  | Plan Multi-Language Support     | N/A              | **Next**      | Research editor libraries, syntax handling |
 | `F-02`  | Plan Extension System           | N/A              | Future      | Define extension API, architecture         |
 | `F-03`  | UI/UX Enhancements              | All              | Future      | Refine layout, add features                |
