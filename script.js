@@ -182,6 +182,23 @@ function removeTypingIndicator() {
     }
 }
 
+/**
+ * Validate the API key format (basic check)
+ * @param {Event} event - The input event
+ * @returns {boolean} - True if the key format looks valid, false otherwise
+ */
+function validateApiKey(event) {
+    const key = event.target.value.trim();
+    const isValid = key === '' || key.startsWith('sk-'); // Allow empty or starting with sk-
+    if (!isValid && key !== '') {
+        logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
+        event.target.style.borderColor = 'var(--error-red)';
+    } else {
+        event.target.style.borderColor = ''; // Reset border color
+    }
+    return isValid;
+}
+
 // ======================================
 // Main Application Logic
 // ======================================
