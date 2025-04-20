@@ -200,6 +200,145 @@ function validateApiKey(event) {
 }
 
 // ======================================
+// API Key Handling
+// ======================================
+
+/**
+ * Saves the API key from the main input field or modal.
+ * @param {string} keyToSave - The API key string to save.
+ */
+function saveApiKey(keyToSave) {
+    logToDebug(`Attempting to save key: ${keyToSave ? keyToSave.substring(0, 5) + '...' : 'empty'}`, 'info'); // Log key start
+    apiKey = keyToSave.trim();
+    if (apiKey && apiKey.startsWith('sk-')) {
+        localStorage.setItem('openrouter_api_key', apiKey);
+        apiKeyStatus.textContent = 'API Key Set';
+        apiKeyStatus.classList.add('set');
+        apiKeyStatus.classList.remove('not-set');
+        apiKeyDebugStatus.textContent = 'Set';
+        logToDebug('API Key saved successfully to localStorage.', 'success');
+        enableAiFeatures();
+        // Optionally clear the input fields after saving
+        apiKeyInput.value = '';
+        if (modalApiKeyInput) modalApiKeyInput.value = ''; // Check if exists
+    } else if (apiKey === '') {
+        localStorage.removeItem('openrouter_api_key');
+        apiKeyStatus.textContent = 'No API Key Set';
+        apiKeyStatus.classList.remove('set');
+        apiKeyStatus.classList.add('not-set');
+        apiKeyDebugStatus.textContent = 'Not Set';
+        logToDebug('API Key cleared from localStorage.', 'info');
+        disableAiFeatures();
+    } else {
+        logToDebug(`Invalid API Key format detected: ${apiKey ? apiKey.substring(0, 5) + '...' : 'empty'}. Not saved.`, 'error');
+        alert('Invalid API Key format. Key was not saved. It should start with "sk-".');
+        disableAiFeatures(); // Ensure features are disabled if save fails
+    }
+    updateDebugStats(); // Update stats after saving/clearing
+}
+
+/**
+ * Handles saving the API key from the main header input.
+ */
+function handleSaveApiKeyFromHeader() {
+    saveApiKey(apiKeyInput.value);
+}
+
+/**
+ * Handles saving the API key from the initial modal.
+ */
+function saveModalApiKey() {
+    const keyFromModal = modalApiKeyInput.value.trim();
+    if (keyFromModal && !keyFromModal.startsWith('sk-')) {
+         alert('Invalid API Key format. Key must start with "sk-".');
+         logToDebug('Invalid API key format entered in modal.', 'warn');
+         return; // Prevent closing modal if key is invalid format
+    }
+    saveApiKey(keyFromModal); // Use the common save function
+    if (apiKey || keyFromModal === '') { // Close modal if key is valid or empty
+       hideApiKeyModal();
+    }
+}
+
+/**
+ * Handles continuing without providing an API key from the modal.
+ */
+function continueWithoutKey() {
+    logToDebug('Continuing without API key.', 'info');
+    apiKey = ''; // Ensure apiKey is empty
+    localStorage.removeItem('openrouter_api_key'); // Clear any stored key
+    apiKeyStatus.textContent = 'No API Key Set';
+    apiKeyStatus.classList.remove('set');
+    apiKeyStatus.classList.add('not-set');
+    apiKeyDebugStatus.textContent = 'Not Set';
+    disableAiFeatures();
+    hideApiKeyModal();
+}
+
+/**
+ * Hides the API key modal.
+ */
+function hideApiKeyModal() {
+    apiKeyModal.classList.add('hidden');
+    apiKeyModal.style.display = 'none'; // Ensure display is set to none
+    logToDebug('API Key modal closed.', 'info');
+}
+
+/**
+ * Loads the API key from local storage on startup.
+ */
+function loadApiKey() {
+    const storedKey = localStorage.getItem('openrouter_api_key');
+    if (storedKey) {
+        apiKey = storedKey;
+        apiKeyStatus.textContent = 'API Key Set';
+        apiKeyStatus.classList.add('set');
+        apiKeyStatus.classList.remove('not-set');
+        apiKeyDebugStatus.textContent = 'Set';
+        logToDebug('API Key loaded from storage.', 'info');
+        enableAiFeatures();
+        hideApiKeyModal(); // Hide modal if key is already loaded
+    } else {
+        apiKeyStatus.textContent = 'No API Key Set';
+        apiKeyStatus.classList.remove('set');
+        apiKeyStatus.classList.add('not-set');
+        apiKeyDebugStatus.textContent = 'Not Set';
+        logToDebug('No API Key found in storage.', 'info');
+        disableAiFeatures();
+        // Don't hide modal automatically if no key is found
+        apiKeyModal.classList.remove('hidden');
+        apiKeyModal.style.display = 'flex';
+    }
+    updateDebugStats();
+}
+
+/**
+ * Enables AI-related UI elements.
+ */
+function enableAiFeatures() {
+    logToDebug('Enabling AI features.', 'info');
+    modelSelector.disabled = false;
+    addModelBtn.disabled = false;
+    sendChatBtn.disabled = false;
+    executeAgentBtn.disabled = false;
+    enhanceBtn.disabled = false;
+    populateModelSelector(); // Populate models now that key is set
+}
+
+/**
+ * Disables AI-related UI elements.
+ */
+function disableAiFeatures() {
+    logToDebug('Disabling AI features.', 'warn');
+    modelSelector.disabled = true;
+    addModelBtn.disabled = true;
+    sendChatBtn.disabled = true;
+    executeAgentBtn.disabled = true;
+    enhanceBtn.disabled = true;
+    modelSelector.innerHTML = '<option value="">Enter API Key to load models</option>'; // Clear models
+}
+
+// ======================================
 // Main Application Logic
 // ======================================
 
@@ -207,146 +346,169 @@ function validateApiKey(event) {
  * Initialize the application
  */
 function init() {
-    logToDebug('Initializing application...', 'info'); // Add log
-    try {
-        // Show the API key modal initially
-        apiKeyModal.classList.remove('hidden'); // Ensure it's not hidden by class
-        apiKeyModal.style.display = 'flex'; // Use flex as defined in CSS for modals
+    // Wrap core logic in DOMContentLoaded to be extra sure elements exist
+    document.addEventListener('DOMContentLoaded', () => {
+        logToDebug('DOM fully loaded. Initializing application...', 'info'); 
+        try {
+            // Load API key first - this determines if modal should show
+            loadApiKey();
 
-        // Make Agent Mode panel visible by default (remove hidden class)
-        agentSection.classList.remove('hidden');
-        
-        // Set up event listeners for API key
-        apiKeyInput.addEventListener('input', validateApiKey);
-        saveApiKeyBtn.addEventListener('click', saveApiKey);
-        modalApiKeyInput.addEventListener('input', validateApiKey);
-        saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
-        continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
-        
-        // Add info button functionality
-        document.getElementById('show-api-info').addEventListener('click', showApiKeyInfo);
-        
-        // Set up event listeners for mode switching
-        chatModeBtn.addEventListener('click', () => switchMode('chat'));
-        agentModeBtn.addEventListener('click', () => switchMode('agent'));
-        
-        // Set up event listeners for editor
-        refreshPreviewBtn.addEventListener('click', updatePreview);
-        
-        // Set up event listeners for tabs
-        htmlTab.addEventListener('click', () => switchTab('html'));
-        cssTab.addEventListener('click', () => switchTab('css'));
-        jsTab.addEventListener('click', () => switchTab('js'));
-        
-        // Set up event listeners for chat
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendChatMessage();
+            // Make Agent Mode panel visible by default (remove hidden class)
+            if (agentSection) agentSection.classList.add('hidden'); // Start in Chat mode view
+            if (chatSection) chatSection.classList.remove('hidden');
+
+            // Set up event listeners for API key
+            if (apiKeyInput) apiKeyInput.addEventListener('input', validateApiKey);
+            if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', handleSaveApiKeyFromHeader);
+            if (modalApiKeyInput) modalApiKeyInput.addEventListener('input', validateApiKey);
+            if (saveModalApiKeyBtn) saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
+            if (continueWithoutKeyBtn) continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
+
+            // Add info button functionality
+            const showApiInfoBtn = document.getElementById('show-api-info');
+            if (showApiInfoBtn && typeof showApiKeyInfo === 'function') {
+                 showApiInfoBtn.addEventListener('click', showApiKeyInfo);
+            } else {
+                 logToDebug('Show API info button or function not found.', 'warn');
             }
-        });
-        sendChatBtn.addEventListener('click', sendChatMessage);
-        
-        // Set up event listeners for agent
-        agentInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                executeAgentAction();
+
+
+            // Set up event listeners for mode switching
+            if (chatModeBtn) chatModeBtn.addEventListener('click', () => switchMode('chat'));
+            if (agentModeBtn) agentModeBtn.addEventListener('click', () => switchMode('agent'));
+
+            // Set up event listeners for editor
+            if (refreshPreviewBtn) refreshPreviewBtn.addEventListener('click', updatePreview);
+
+            // Set up event listeners for tabs
+            if (htmlTab) htmlTab.addEventListener('click', () => switchTab('html'));
+            if (cssTab) cssTab.addEventListener('click', () => switchTab('css'));
+            if (jsTab) jsTab.addEventListener('click', () => switchTab('js'));
+
+            // Set up event listeners for chat
+            if (chatInput) {
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
             }
-        });
-        executeAgentBtn.addEventListener('click', executeAgentAction);
-        
-        // Set up event listeners for model selection
-        addModelBtn.addEventListener('click', showAddModelModal);
-        cancelAddModel.addEventListener('click', hideAddModelModal);
-        confirmAddModel.addEventListener('click', addCustomModel);
-        
-        // Set up event listeners for file explorer
-        downloadFileBtn.addEventListener('click', downloadCurrentFile);
-        downloadProjectBtn.addEventListener('click', downloadProject);
-        fileList.forEach(file => {
-            file.addEventListener('click', () => {
-                const fileType = file.classList.contains('html-file') ? 'html' : 
-                                file.classList.contains('css-file') ? 'css' : 'js';
-                switchTab(fileType);
-            });
-        });
-        
-        // Set up event listeners for debug panel
-        debugToggle.addEventListener('click', toggleDebugPanel);
-        closeDebugBtn.addEventListener('click', toggleDebugPanel);
-        clearLogsBtn.addEventListener('click', clearLogs);
-        
-        // Set up event listeners for export
-        exportHtml.addEventListener('click', () => exportContent('html'));
-        exportCss.addEventListener('click', () => exportContent('css'));
-        exportJs.addEventListener('click', () => exportContent('js'));
-        exportZip.addEventListener('click', () => exportContent('zip'));
-        
-        // Set up debug tabs
-        debugTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                setActiveDebugTab(tabName);
-            });
-        });
-        
-        // Set up close buttons for modals
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const modal = btn.closest('.modal');
-                modal.classList.add('hidden');
-            });
-        });
+            if (sendChatBtn) sendChatBtn.addEventListener('click', sendChatMessage);
 
-        // Initialize CodeMirror Editors
-        logToDebug('Initializing CodeMirror...', 'info'); // Add log
-        if (typeof CodeMirror === 'undefined') {
-            logToDebug('CodeMirror object not found! Check script loading order.', 'error');
-            return; // Stop init if CodeMirror isn't loaded
-        }
-        const { EditorState } = CodeMirror.state;
-        const { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } = CodeMirror.view;
-        const { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } = CodeMirror.commands;
-        const { language } = CodeMirror.language;
-        const { html } = CodeMirror.lang_html;
-        const { css } = CodeMirror.lang_css;
-        const { javascript } = CodeMirror.lang_javascript;
-        const { oneDark } = CodeMirror.theme_one_dark;
+            // Set up event listeners for agent
+            if (agentInput) {
+                agentInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                        e.preventDefault();
+                        executeAgentAction();
+                    }
+                });
+            }
+            if (executeAgentBtn) executeAgentBtn.addEventListener('click', executeAgentAction);
 
-        const commonExtensions = [
-            lineNumbers(),
-            highlightActiveLineGutter(),
-            highlightSpecialChars(),
-            history(),
-            foldGutter(),
-            drawSelection(),
-            dropCursor(),
-            EditorState.allowMultipleSelections.of(true),
-            rectangularSelection(),
-            crosshairCursor(),
-            highlightActiveLine(),
-            highlightSelectionMatches(),
-            keymap.of([
-                ...defaultKeymap,
-                ...historyKeymap,
-                ...foldKeymap,
-                ...completionKeymap,
-                ...lintKeymap
-            ]),
-            oneDark, // Apply the dark theme
-            EditorView.updateListener.of((update) => {
-                if (update.docChanged) {
-                    debouncedUpdatePreview();
+            // Set up event listeners for model selection
+            if (addModelBtn) addModelBtn.addEventListener('click', showAddModelModal);
+            if (cancelAddModel) cancelAddModel.addEventListener('click', hideAddModelModal);
+            if (confirmAddModel) confirmAddModel.addEventListener('click', addCustomModel);
+
+            // Set up event listeners for file explorer
+            if (downloadFileBtn) downloadFileBtn.addEventListener('click', downloadCurrentFile);
+            if (downloadProjectBtn) downloadProjectBtn.addEventListener('click', downloadProject);
+            if (fileList) {
+                fileList.forEach(file => {
+                    file.addEventListener('click', () => {
+                        const fileType = file.classList.contains('html-file') ? 'html' : 
+                                        file.classList.contains('css-file') ? 'css' : 'js';
+                        switchTab(fileType);
+                    });
+                });
+            }
+
+            // Set up event listeners for debug panel
+            if (debugToggle) debugToggle.addEventListener('click', toggleDebugPanel);
+            if (closeDebugBtn) closeDebugBtn.addEventListener('click', toggleDebugPanel);
+            if (clearLogsBtn) clearLogsBtn.addEventListener('click', clearLogs);
+
+            // Set up event listeners for export
+            if (exportHtml) exportHtml.addEventListener('click', () => exportContent('html'));
+            if (exportCss) exportCss.addEventListener('click', () => exportContent('css'));
+            if (exportJs) exportJs.addEventListener('click', () => exportContent('js'));
+            if (exportZip) exportZip.addEventListener('click', () => exportContent('zip'));
+
+            // Set up debug tabs
+            if (debugTabs) {
+                debugTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = tab.dataset.tab;
+                        setActiveDebugTab(tabName);
+                    });
+                });
+            }
+
+            // Set up close buttons for modals
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modal = btn.closest('.modal');
+                    if (modal) modal.classList.add('hidden');
+                });
+            });
+
+            // Initialize CodeMirror Editors
+            logToDebug('Initializing CodeMirror...', 'info'); 
+            try { // Add specific try-catch for CodeMirror
+                if (typeof CodeMirror === 'undefined' || !CodeMirror.state || !CodeMirror.view) {
+                    logToDebug('CodeMirror object or required modules (state, view) not found! Check script loading order and CDN links.', 'error');
+                    alert('Error: CodeMirror failed to load. The editor will not function.');
+                    return; // Stop init if CodeMirror isn't loaded correctly
                 }
-            })
-        ];
+                const { EditorState } = CodeMirror.state;
+                const { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } = CodeMirror.view;
+                const { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } = CodeMirror.commands;
+                // Language packages might be directly on CodeMirror or need specific access
+                const { html } = CodeMirror.lang_html || CodeMirror; 
+                const { css } = CodeMirror.lang_css || CodeMirror;
+                const { javascript } = CodeMirror.lang_javascript || CodeMirror;
+                const { oneDark } = CodeMirror.theme_one_dark || CodeMirror;
 
-        // Debounced preview function
-        const debouncedUpdatePreview = debounce(updatePreview, 300);
+                if (!html || !css || !javascript || !oneDark) {
+                     logToDebug('CodeMirror language packs or theme failed to load.', 'error');
+                     // Continue initialization but log the error
+                }
 
-        // Sample Code (moved here for easier access during initialization)
-        const sampleHtml = `<!DOCTYPE html>
+                const commonExtensions = [
+                    lineNumbers(),
+                    highlightActiveLineGutter(),
+                    highlightSpecialChars(),
+                    history(),
+                    foldGutter(),
+                    drawSelection(),
+                    dropCursor(),
+                    EditorState.allowMultipleSelections.of(true),
+                    rectangularSelection(),
+                    crosshairCursor(),
+                    highlightActiveLine(),
+                    highlightSelectionMatches(),
+                    keymap.of([
+                        ...defaultKeymap,
+                        ...historyKeymap,
+                        ...foldKeymap,
+                        ...completionKeymap,
+                        ...lintKeymap
+                    ]),
+                    oneDark, // Apply the dark theme
+                    EditorView.updateListener.of((update) => {
+                        if (update.docChanged) {
+                            debouncedUpdatePreview();
+                        }
+                    })
+                ];
+
+                // Debounced preview function
+                const debouncedUpdatePreview = debounce(updatePreview, 300);
+
+                // Sample Code 
+                const sampleHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -376,7 +538,7 @@ function init() {
 </body>
 </html>`;
 
-        const sampleCss = `/* Sample CSS */
+                const sampleCss = `/* Sample CSS */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
@@ -422,7 +584,7 @@ button:hover {
     background-color: #2980b9;
 }`;
 
-        const sampleJs = `// Sample JavaScript
+                const sampleJs = `// Sample JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Get the button element
     const button = document.getElementById('demo-button');
@@ -438,66 +600,273 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('JavaScript initialized successfully!');
 });`;
 
-        // HTML Editor
-        htmlEditorView = new EditorView({
-            state: EditorState.create({
-                doc: sampleHtml,
-                extensions: [
-                    ...commonExtensions,
-                    html()
-                ]
-            }),
-            parent: document.getElementById('html-editor-cm')
-        });
+                // HTML Editor
+                const htmlEditorParent = document.getElementById('html-editor-cm');
+                if (htmlEditorParent) {
+                    htmlEditorView = new EditorView({
+                        state: EditorState.create({
+                            doc: sampleHtml,
+                            extensions: [ ...commonExtensions, html() ]
+                        }),
+                        parent: htmlEditorParent
+                    });
+                    logToDebug('HTML EditorView created.', 'info');
+                } else {
+                     logToDebug('HTML editor parent element not found!', 'error');
+                }
 
-        // CSS Editor
-        cssEditorView = new EditorView({
-            state: EditorState.create({
-                doc: sampleCss,
-                extensions: [
-                    ...commonExtensions,
-                    css()
-                ]
-            }),
-            parent: document.getElementById('css-editor-cm')
-        });
 
-        // JavaScript Editor
-        jsEditorView = new EditorView({
-            state: EditorState.create({
-                doc: sampleJs,
-                extensions: [
-                    ...commonExtensions,
-                    javascript()
-                ]
-            }),
-            parent: document.getElementById('js-editor-cm')
-        });
+                // CSS Editor
+                const cssEditorParent = document.getElementById('css-editor-cm');
+                 if (cssEditorParent) {
+                    cssEditorView = new EditorView({
+                        state: EditorState.create({
+                            doc: sampleCss,
+                            extensions: [ ...commonExtensions, css() ]
+                        }),
+                        parent: cssEditorParent
+                    });
+                    logToDebug('CSS EditorView created.', 'info');
+                } else {
+                     logToDebug('CSS editor parent element not found!', 'error');
+                }
 
-        // Initial preview update
-        updatePreview();
+                // JavaScript Editor
+                 const jsEditorParent = document.getElementById('js-editor-cm');
+                 if (jsEditorParent) {
+                    jsEditorView = new EditorView({
+                        state: EditorState.create({
+                            doc: sampleJs,
+                            extensions: [ ...commonExtensions, javascript() ]
+                        }),
+                        parent: jsEditorParent
+                    });
+                    logToDebug('JS EditorView created.', 'info');
+                } else {
+                     logToDebug('JS editor parent element not found!', 'error');
+                }
 
-        // Log initialization
-        logToDebug('Editor initialized successfully', 'info');
-        
-        // Expose API for external use
-        exposeEditorAPI();
-        
-        // Add animation effects
-        addAnimationEffects();
+                // Initial preview update
+                updatePreview();
 
-        logToDebug('Application initialization complete.', 'success'); // Add log
+                logToDebug('CodeMirror initialization finished.', 'info');
 
-    } catch (error) {
-        logToDebug(`Error during initialization: ${error.message}`, 'error');
-        console.error("Initialization Error:", error);
+            } catch (cmError) {
+                 logToDebug(`Error during CodeMirror initialization: ${cmError.message}`, 'error');
+                 console.error("CodeMirror Initialization Error:", cmError);
+                 alert(`CodeMirror Error: ${cmError.message}. Editor might not work.`);
+            }
+            
+            // Expose API for external use
+            exposeEditorAPI();
+            
+            // Add animation effects
+            addAnimationEffects();
+
+            logToDebug('Application initialization complete.', 'success'); 
+
+        } catch (error) {
+            logToDebug(`Error during initialization: ${error.message}`, 'error');
+            console.error("Initialization Error:", error);
+            alert(`Initialization failed: ${error.message}`);
+        }
+    }); // End DOMContentLoaded listener
+}
+
+// ======================================
+// Mode Switching
+// ======================================
+function switchMode(mode) {
+    if (mode === currentMode) return;
+
+    logToDebug(`Switching to ${mode} mode.`, 'info');
+    currentMode = mode;
+
+    // Update button styles
+    chatModeBtn.classList.toggle('active', mode === 'chat');
+    agentModeBtn.classList.toggle('active', mode === 'agent');
+
+    // Toggle pane visibility with animation (optional)
+    if (mode === 'chat') {
+        gsap.to(agentSection, { duration: 0.3, opacity: 0, onComplete: () => agentSection.classList.add('hidden') });
+        chatSection.classList.remove('hidden');
+        gsap.fromTo(chatSection, { opacity: 0 }, { duration: 0.3, opacity: 1 });
+    } else { // Agent mode
+        gsap.to(chatSection, { duration: 0.3, opacity: 0, onComplete: () => chatSection.classList.add('hidden') });
+        agentSection.classList.remove('hidden');
+        gsap.fromTo(agentSection, { opacity: 0 }, { duration: 0.3, opacity: 1 });
     }
+}
+
+// ======================================
+// Editor and Preview Logic
+// ======================================
+
+/**
+ * Switch between HTML, CSS, and JS editor tabs
+ */
+function switchTab(tabType) {
+    if (tabType === currentTab) return;
+    logToDebug(`Switching to ${tabType} tab.`, 'info');
+
+    currentTab = tabType;
+
+    // Update tab buttons
+    document.querySelectorAll('.editor-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.id === `${tabType}-tab`);
+    });
+
+    // Update editor panes
+    document.querySelectorAll('.code-editor').forEach(editor => {
+        editor.classList.toggle('active', editor.id === `${tabType}-editor`);
+    });
+
+    // Update file explorer highlight
+    document.querySelectorAll('.file-list .file').forEach(file => {
+        file.classList.toggle('active', file.classList.contains(`${tabType}-file`));
+    });
+
+    // Focus the corresponding editor (optional, might need adjustment)
+    // try {
+    //     if (tabType === 'html' && htmlEditorView) htmlEditorView.focus();
+    //     else if (tabType === 'css' && cssEditorView) cssEditorView.focus();
+    //     else if (tabType === 'js' && jsEditorView) jsEditorView.focus();
+    // } catch (focusError) {
+    //     logToDebug(`Error focusing editor view: ${focusError.message}`, 'warn');
+    // }
+}
+
+/**
+ * Update the preview iframe with current editor content
+ */
+function updatePreview() {
+    logToDebug('Updating preview...', 'info');
+    try {
+        const htmlCode = htmlEditorView ? htmlEditorView.state.doc.toString() : '';
+        const cssCode = cssEditorView ? cssEditorView.state.doc.toString() : '';
+        const jsCode = jsEditorView ? jsEditorView.state.doc.toString() : '';
+
+        const previewDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+        
+        previewDoc.open();
+        previewDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>${cssCode}</style>
+            </head>
+            <body>
+                ${htmlCode}
+                <script>${jsCode}<\/script> 
+            </body>
+            </html>
+        `);
+        previewDoc.close();
+        logToDebug('Preview updated successfully.', 'info');
+    } catch (error) {
+        logToDebug(`Error updating preview: ${error.message}`, 'error');
+        console.error("Preview Update Error:", error);
+    }
+}
+
+// ======================================
+// Model Handling
+// ======================================
+function populateModelSelector() {
+    // ... existing code ...
+}
+
+function showAddModelModal() {
+    // ... existing code ...
+}
+
+function hideAddModelModal() {
+    // ... existing code ...
+}
+
+function addCustomModel() {
+    // ... existing code ...
+}
+
+// ======================================
+// Chat Functionality
+// ======================================
+function sendChatMessage() {
+    // ... existing code ...
+}
+
+// ======================================
+// Agent Functionality
+// ======================================
+function executeAgentAction() {
+    // ... existing code ...
+}
+
+// ======================================
+// OpenRouter API Call
+// ======================================
+async function callOpenRouterAPI(prompt, mode = 'chat') {
+    // ... existing code ...
+}
+
+// ======================================
+// Debug Panel Logic
+// ======================================
+function toggleDebugPanel() {
+    // ... existing code ...
+}
+
+function setActiveDebugTab(tabName) {
+    // ... existing code ...
+}
+
+function clearLogs() {
+    // ... existing code ...
+}
+
+function updateDebugStats() {
+    // ... existing code ...
+}
+
+// ======================================
+// Export Functionality
+// ======================================
+function exportContent(type) {
+    // ... existing code ...
+}
+
+function downloadFile(filename, content, mimeType) {
+    // ... existing code ...
+}
+
+// ======================================
+// File Explorer Logic
+// ======================================
+function downloadCurrentFile() {
+    // ... existing code ...
+}
+
+function downloadProject() {
+    // ... existing code ...
+}
+
+// ======================================
+// Animation Effects
+// ======================================
+function addAnimationEffects() {
+    // ... existing code ...
+}
+
+// ======================================
+// Expose Editor API (Optional)
+// ======================================
+function exposeEditorAPI() {
+    // ... existing code ...
 }
 
 // ======================================
 // Initialization Trigger
 // ======================================
-
 // Use window.onload to ensure all resources (including CodeMirror scripts) are loaded
 window.onload = init;
 
