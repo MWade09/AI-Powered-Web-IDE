@@ -204,90 +204,24 @@ function validateApiKey(event) {
 // ======================================
 
 /**
- * Saves the API key from the main input field or modal.
- * @param {string} keyToSave - The API key string to save.
- */
-function saveApiKey(keyToSave) {
-    logToDebug(`Attempting to save key: ${keyToSave ? keyToSave.substring(0, 5) + '...' : 'empty'}`, 'info'); // Log key start
-    apiKey = keyToSave.trim();
-    if (apiKey && apiKey.startsWith('sk-')) {
-        localStorage.setItem('openrouter_api_key', apiKey);
-        apiKeyStatus.textContent = 'API Key Set';
-        apiKeyStatus.classList.add('set');
-        apiKeyStatus.classList.remove('not-set');
-        apiKeyDebugStatus.textContent = 'Set';
-        logToDebug('API Key saved successfully to localStorage.', 'success');
-        enableAiFeatures();
-        // Optionally clear the input fields after saving
-        apiKeyInput.value = '';
-        if (modalApiKeyInput) modalApiKeyInput.value = ''; // Check if exists
-    } else if (apiKey === '') {
-        localStorage.removeItem('openrouter_api_key');
-        apiKeyStatus.textContent = 'No API Key Set';
-        apiKeyStatus.classList.remove('set');
-        apiKeyStatus.classList.add('not-set');
-        apiKeyDebugStatus.textContent = 'Not Set';
-        logToDebug('API Key cleared from localStorage.', 'info');
-        disableAiFeatures();
-    } else {
-        logToDebug(`Invalid API Key format detected: ${apiKey ? apiKey.substring(0, 5) + '...' : 'empty'}. Not saved.`, 'error');
-        alert('Invalid API Key format. Key was not saved. It should start with "sk-".');
-        disableAiFeatures(); // Ensure features are disabled if save fails
-    }
-    updateDebugStats(); // Update stats after saving/clearing
-}
-
-/**
- * Handles saving the API key from the main header input.
- */
-function handleSaveApiKeyFromHeader() {
-    saveApiKey(apiKeyInput.value);
-}
-
-/**
- * Handles saving the API key from the initial modal.
- */
-function saveModalApiKey() {
-    const keyFromModal = modalApiKeyInput.value.trim();
-    if (keyFromModal && !keyFromModal.startsWith('sk-')) {
-         alert('Invalid API Key format. Key must start with "sk-".');
-         logToDebug('Invalid API key format entered in modal.', 'warn');
-         return; // Prevent closing modal if key is invalid format
-    }
-    saveApiKey(keyFromModal); // Use the common save function
-    if (apiKey || keyFromModal === '') { // Close modal if key is valid or empty
-       hideApiKeyModal();
-    }
-}
-
-/**
- * Handles continuing without providing an API key from the modal.
- */
-function continueWithoutKey() {
-    logToDebug('Continuing without API key.', 'info');
-    apiKey = ''; // Ensure apiKey is empty
-    localStorage.removeItem('openrouter_api_key'); // Clear any stored key
-    apiKeyStatus.textContent = 'No API Key Set';
-    apiKeyStatus.classList.remove('set');
-    apiKeyStatus.classList.add('not-set');
-    apiKeyDebugStatus.textContent = 'Not Set';
-    disableAiFeatures();
-    hideApiKeyModal();
-}
-
-/**
  * Hides the API key modal.
  */
 function hideApiKeyModal() {
-    apiKeyModal.classList.add('hidden');
-    apiKeyModal.style.display = 'none'; // Ensure display is set to none
-    logToDebug('API Key modal closed.', 'info');
+    logToDebug('Attempting to hide API Key modal...', 'info'); // Added log
+    if (apiKeyModal) { // Check if modal element exists
+        apiKeyModal.classList.add('hidden');
+        apiKeyModal.style.display = 'none'; // Ensure display is set to none
+        logToDebug('API Key modal hidden successfully.', 'info'); // Added log
+    } else {
+        logToDebug('API Key modal element not found in DOM.', 'error'); // Added error log
+    }
 }
 
 /**
  * Loads the API key from local storage on startup.
  */
 function loadApiKey() {
+    logToDebug('loadApiKey function called.', 'info'); // Added log
     const storedKey = localStorage.getItem('openrouter_api_key');
     if (storedKey) {
         apiKey = storedKey;
@@ -295,7 +229,7 @@ function loadApiKey() {
         apiKeyStatus.classList.add('set');
         apiKeyStatus.classList.remove('not-set');
         apiKeyDebugStatus.textContent = 'Set';
-        logToDebug('API Key loaded from storage.', 'info');
+        logToDebug(`API Key loaded from storage: ${storedKey.substring(0, 5)}...`, 'info'); // Added log
         enableAiFeatures();
         hideApiKeyModal(); // Hide modal if key is already loaded
     } else {
@@ -303,39 +237,58 @@ function loadApiKey() {
         apiKeyStatus.classList.remove('set');
         apiKeyStatus.classList.add('not-set');
         apiKeyDebugStatus.textContent = 'Not Set';
-        logToDebug('No API Key found in storage.', 'info');
+        logToDebug('No API Key found in storage. Showing modal.', 'info'); // Added log
         disableAiFeatures();
         // Don't hide modal automatically if no key is found
-        apiKeyModal.classList.remove('hidden');
-        apiKeyModal.style.display = 'flex';
+        if (apiKeyModal) { // Check if modal element exists
+             apiKeyModal.classList.remove('hidden');
+             apiKeyModal.style.display = 'flex';
+             logToDebug('API Key modal displayed.', 'info'); // Added log
+        } else {
+             logToDebug('API Key modal element not found when trying to show.', 'error'); // Added error log
+        }
     }
     updateDebugStats();
 }
 
 /**
- * Enables AI-related UI elements.
+ * Handles saving the API key from the initial modal.
  */
-function enableAiFeatures() {
-    logToDebug('Enabling AI features.', 'info');
-    modelSelector.disabled = false;
-    addModelBtn.disabled = false;
-    sendChatBtn.disabled = false;
-    executeAgentBtn.disabled = false;
-    enhanceBtn.disabled = false;
-    populateModelSelector(); // Populate models now that key is set
+function saveModalApiKey() {
+    logToDebug('saveModalApiKey function called.', 'info'); // Added log
+    if (!modalApiKeyInput) {
+        logToDebug('Modal API key input element not found.', 'error');
+        return;
+    }
+    const keyFromModal = modalApiKeyInput.value.trim();
+    if (keyFromModal && !keyFromModal.startsWith('sk-')) {
+         alert('Invalid API Key format. Key must start with "sk-".');
+         logToDebug('Invalid API key format entered in modal.', 'warn');
+         return; // Prevent closing modal if key is invalid format
+    }
+    saveApiKey(keyFromModal); // Use the common save function
+    // Check if the key is now valid (either newly saved or was already valid) OR if the input was cleared
+    if ((apiKey && apiKey.startsWith('sk-')) || keyFromModal === '') { 
+       logToDebug('Key is valid or empty, hiding modal.', 'info'); // Added log
+       hideApiKeyModal();
+    } else {
+       logToDebug('Key is invalid, modal remains open.', 'warn'); // Added log
+    }
 }
 
 /**
- * Disables AI-related UI elements.
+ * Handles continuing without providing an API key from the modal.
  */
-function disableAiFeatures() {
-    logToDebug('Disabling AI features.', 'warn');
-    modelSelector.disabled = true;
-    addModelBtn.disabled = true;
-    sendChatBtn.disabled = true;
-    executeAgentBtn.disabled = true;
-    enhanceBtn.disabled = true;
-    modelSelector.innerHTML = '<option value="">Enter API Key to load models</option>'; // Clear models
+function continueWithoutKey() {
+    logToDebug('continueWithoutKey function called.', 'info'); // Added log
+    apiKey = ''; // Ensure apiKey is empty
+    localStorage.removeItem('openrouter_api_key'); // Clear any stored key
+    apiKeyStatus.textContent = 'No API Key Set';
+    apiKeyStatus.classList.remove('set');
+    apiKeyStatus.classList.add('not-set');
+    apiKeyDebugStatus.textContent = 'Not Set';
+    disableAiFeatures();
+    hideApiKeyModal(); // Hide the modal
 }
 
 // ======================================
