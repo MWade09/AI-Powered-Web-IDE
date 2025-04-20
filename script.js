@@ -22,10 +22,10 @@ let currentTab = 'html';
 let currentMode = 'chat';
 let apiKey = '';
 
-// CodeMirror Editor Instances
-let htmlEditorView, cssEditorView, jsEditorView;
-
 // DOM Elements - Main UI
+const htmlEditor = document.getElementById('html-code');
+const cssEditor = document.getElementById('css-code');
+const jsEditor = document.getElementById('js-code');
 const previewFrame = document.getElementById('preview-frame');
 const htmlTab = document.getElementById('html-tab');
 const cssTab = document.getElementById('css-tab');
@@ -94,427 +94,114 @@ const exportCss = document.getElementById('export-css');
 const exportJs = document.getElementById('export-js');
 const exportZip = document.getElementById('export-zip');
 
-// ======================================
-// Helper Functions (Define before use)
-// ======================================
-
-/**
- * Debounce function to limit the rate at which a function can fire.
- */
-function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
-}
-
-/**
- * Log messages to the debug panel
- */
-function logToDebug(message, level = 'info') {
-    const logEntry = document.createElement('div');
-    logEntry.className = `log-entry ${level}`;
-    logEntry.textContent = `[${level.toUpperCase()}] ${message}`;
-    debugLogs.appendChild(logEntry);
-    debugLogs.scrollTop = debugLogs.scrollHeight;
-}
-
-/**
- * Add a message to the chat interface
- * @param {string} sender - 'user', 'ai', or 'system'
- * @param {string} message - The message content (can include markdown)
- */
-function addMessageToChat(sender, message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', `${sender}-message`);
-    
-    let avatar = '';
-    if (sender === 'user') {
-        avatar = '<i class="fas fa-user"></i>';
-    } else if (sender === 'ai') {
-        avatar = '<i class="fas fa-robot"></i>';
-    } else { // system
-        avatar = '<i class="fas fa-info-circle"></i>';
-    }
-    
-    let formattedMessage = message
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    messageDiv.innerHTML = `
-        <div class="message-avatar">${avatar}</div>
-        <div class="message-content">${formattedMessage}</div>
-    `;
-    
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Add a typing indicator to the chat
- */
-function addTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.classList.add('message', 'ai-message', 'typing-indicator');
-    typingDiv.innerHTML = `
-        <div class="message-avatar"><i class="fas fa-robot"></i></div>
-        <div class="message-content">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    `;
-    chatMessages.appendChild(typingDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-/**
- * Remove the typing indicator from the chat
- */
-function removeTypingIndicator() {
-    const indicator = chatMessages.querySelector('.typing-indicator');
-    if (indicator) {
-        indicator.remove();
-    }
-}
-
-/**
- * Validate the API key format (basic check)
- * @param {Event} event - The input event
- * @returns {boolean} - True if the key format looks valid, false otherwise
- */
-function validateApiKey(event) {
-    const key = event.target.value.trim();
-    const isValid = key === '' || key.startsWith('sk-'); // Allow empty or starting with sk-
-    if (!isValid && key !== '') {
-        logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
-        event.target.style.borderColor = 'var(--error-red)';
-    } else {
-        event.target.style.borderColor = ''; // Reset border color
-    }
-    return isValid;
-}
-
-// ======================================
-// Feature Toggling (Define before use)
-// ======================================
-
-/**
- * Enables AI-related UI elements.
- */
-function enableAiFeatures() {
-    logToDebug('Enabling AI features.', 'info');
-    if (modelSelector) modelSelector.disabled = false;
-    if (addModelBtn) addModelBtn.disabled = false;
-    if (enhanceBtn) enhanceBtn.disabled = false;
-    if (sendChatBtn) sendChatBtn.disabled = false;
-    if (executeAgentBtn) executeAgentBtn.disabled = false;
-}
-
-/**
- * Disables AI-related UI elements.
- */
-function disableAiFeatures() {
-    logToDebug('Disabling AI features.', 'info');
-    if (modelSelector) modelSelector.disabled = true;
-    if (addModelBtn) addModelBtn.disabled = true;
-    if (enhanceBtn) enhanceBtn.disabled = true;
-    if (sendChatBtn) sendChatBtn.disabled = true;
-    if (executeAgentBtn) executeAgentBtn.disabled = true;
-}
-
-// ======================================
-// API Key Handling
-// ======================================
-
-/**
- * Hides the API key modal.
- */
-function hideApiKeyModal() {
-    logToDebug('Attempting to hide API Key modal...', 'info'); // Added log
-    if (apiKeyModal) { // Check if modal element exists
-        apiKeyModal.classList.add('hidden');
-        apiKeyModal.style.display = 'none'; // Ensure display is set to none
-        logToDebug('API Key modal hidden successfully.', 'info'); // Added log
-    } else {
-        logToDebug('API Key modal element not found in DOM.', 'error'); // Added error log
-    }
-}
-
-/**
- * Loads the API key from local storage on startup.
- */
-function loadApiKey() {
-    logToDebug('loadApiKey function called.', 'info'); // Added log
-    const storedKey = localStorage.getItem('openrouter_api_key');
-    if (storedKey) {
-        apiKey = storedKey;
-        apiKeyStatus.textContent = 'API Key Set';
-        apiKeyStatus.classList.add('set');
-        apiKeyStatus.classList.remove('not-set');
-        apiKeyDebugStatus.textContent = 'Set';
-        logToDebug(`API Key loaded from storage: ${storedKey.substring(0, 5)}...`, 'info'); // Added log
-        enableAiFeatures();
-        hideApiKeyModal(); // Hide modal if key is already loaded
-    } else {
-        apiKeyStatus.textContent = 'No API Key Set';
-        apiKeyStatus.classList.remove('set');
-        apiKeyStatus.classList.add('not-set');
-        apiKeyDebugStatus.textContent = 'Not Set';
-        logToDebug('No API Key found in storage. Showing modal.', 'info'); // Added log
-        disableAiFeatures();
-        // Don't hide modal automatically if no key is found
-        if (apiKeyModal) { // Check if modal element exists
-             apiKeyModal.classList.remove('hidden');
-             apiKeyModal.style.display = 'flex';
-             logToDebug('API Key modal displayed.', 'info'); // Added log
-        } else {
-             logToDebug('API Key modal element not found when trying to show.', 'error'); // Added error log
-        }
-    }
-    updateDebugStats();
-}
-
-/**
- * Handles saving the API key from the initial modal.
- */
-function saveModalApiKey() {
-    logToDebug('saveModalApiKey function called.', 'info'); // Added log
-    if (!modalApiKeyInput) {
-        logToDebug('Modal API key input element not found.', 'error');
-        return;
-    }
-    const keyFromModal = modalApiKeyInput.value.trim();
-    if (keyFromModal && !keyFromModal.startsWith('sk-')) {
-         alert('Invalid API Key format. Key must start with "sk-".');
-         logToDebug('Invalid API key format entered in modal.', 'warn');
-         return; // Prevent closing modal if key is invalid format
-    }
-    saveApiKey(keyFromModal); // Use the common save function
-    // Check if the key is now valid (either newly saved or was already valid) OR if the input was cleared
-    if ((apiKey && apiKey.startsWith('sk-')) || keyFromModal === '') { 
-       logToDebug('Key is valid or empty, hiding modal.', 'info'); // Added log
-       hideApiKeyModal();
-    } else {
-       logToDebug('Key is invalid, modal remains open.', 'warn'); // Added log
-    }
-}
-
-/**
- * Handles continuing without providing an API key from the modal.
- */
-function continueWithoutKey() {
-    logToDebug('continueWithoutKey function called.', 'info'); // Added log
-    apiKey = ''; // Ensure apiKey is empty
-    localStorage.removeItem('openrouter_api_key'); // Clear any stored key
-    apiKeyStatus.textContent = 'No API Key Set';
-    apiKeyStatus.classList.remove('set');
-    apiKeyStatus.classList.add('not-set');
-    apiKeyDebugStatus.textContent = 'Not Set';
-    disableAiFeatures();
-    hideApiKeyModal(); // Hide the modal
-}
-
-// ======================================
-// Main Application Logic
-// ======================================
-
 /**
  * Initialize the application
  */
 function init() {
-    // DOM is already guaranteed to be ready by window.onload
-    logToDebug('window.onload fired. Initializing application...', 'info'); 
-    try {
-        // Ensure crucial modal elements are selected correctly at the start
-        const apiKeyModalElement = document.getElementById('api-key-modal');
-        const saveModalBtnElement = document.getElementById('save-modal-api-key');
-        const continueBtnElement = document.getElementById('continue-without-key');
-        logToDebug(`Modal elements found early: apiKeyModal=${!!apiKeyModalElement}, saveBtn=${!!saveModalBtnElement}, continueBtn=${!!continueBtnElement}`, 'info');
-
-        // Load API key first - this determines if modal should show
-        loadApiKey();
-
-        // Make Agent Mode panel visible by default (remove hidden class)
-        if (agentSection) agentSection.classList.add('hidden'); // Start in Chat mode view
-        if (chatSection) chatSection.classList.remove('hidden');
-
-        // Set up event listeners for API key
-        if (apiKeyInput) apiKeyInput.addEventListener('input', validateApiKey);
-        if (saveApiKeyBtn) saveApiKeyBtn.addEventListener('click', handleSaveApiKeyFromHeader);
-        if (modalApiKeyInput) modalApiKeyInput.addEventListener('input', validateApiKey);
-        
-        // --- Specific check for modal buttons before adding listeners ---
-        if (saveModalApiKeyBtn) {
-            logToDebug('saveModalApiKeyBtn element found. Attaching listener.', 'info');
-            saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
-        } else {
-            logToDebug('saveModalApiKeyBtn element NOT FOUND. Listener not attached.', 'error');
+    // Start with API key modal hidden - no API key required to use the editor
+    apiKeyModal.classList.add('hidden');
+    apiKeyModal.style.display = 'none';
+    
+    // Set editor as fully functional without AI features
+    updateApiKeyStatus(false);
+    
+    // Set up event listeners for API key
+    apiKeyInput.addEventListener('input', validateApiKey);
+    saveApiKeyBtn.addEventListener('click', saveApiKey);
+    modalApiKeyInput.addEventListener('input', validateApiKey);
+    saveModalApiKeyBtn.addEventListener('click', saveModalApiKey);
+    continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
+    
+    // Add info button functionality
+    document.getElementById('show-api-info').addEventListener('click', showApiKeyInfo);
+    
+    // Set up event listeners for mode switching
+    chatModeBtn.addEventListener('click', () => switchMode('chat'));
+    agentModeBtn.addEventListener('click', () => switchMode('agent'));
+    
+    // Set up event listeners for editor
+    htmlEditor.addEventListener('input', debounce(updatePreview, 300));
+    cssEditor.addEventListener('input', debounce(updatePreview, 300));
+    jsEditor.addEventListener('input', debounce(updatePreview, 300));
+    refreshPreviewBtn.addEventListener('click', updatePreview);
+    
+    // Set up event listeners for tabs
+    htmlTab.addEventListener('click', () => switchTab('html'));
+    cssTab.addEventListener('click', () => switchTab('css'));
+    jsTab.addEventListener('click', () => switchTab('js'));
+    
+    // Set up event listeners for chat
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
         }
-        
-        if (continueWithoutKeyBtn) {
-            logToDebug('continueWithoutKeyBtn element found. Attaching listener.', 'info');
-            continueWithoutKeyBtn.addEventListener('click', continueWithoutKey);
-        } else {
-            logToDebug('continueWithoutKeyBtn element NOT FOUND. Listener not attached.', 'error');
+    });
+    sendChatBtn.addEventListener('click', sendChatMessage);
+    
+    // Set up event listeners for agent
+    agentInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
+            executeAgentAction();
         }
-        // --- End specific check ---
-
-        // Add info button functionality
-        const showApiInfoBtn = document.getElementById('show-api-info');
-        if (showApiInfoBtn && typeof showApiKeyInfo === 'function') {
-             showApiInfoBtn.addEventListener('click', showApiKeyInfo);
-        } else {
-             logToDebug('Show API info button or function not found.', 'warn');
-        }
-
-        // Set up event listeners for mode switching
-        if (chatModeBtn) chatModeBtn.addEventListener('click', () => switchMode('chat'));
-        if (agentModeBtn) agentModeBtn.addEventListener('click', () => switchMode('agent'));
-
-        // Set up event listeners for editor
-        if (refreshPreviewBtn) refreshPreviewBtn.addEventListener('click', updatePreview);
-
-        // Set up event listeners for tabs
-        if (htmlTab) htmlTab.addEventListener('click', () => switchTab('html'));
-        if (cssTab) cssTab.addEventListener('click', () => switchTab('css'));
-        if (jsTab) jsTab.addEventListener('click', () => switchTab('js'));
-
-        // Set up event listeners for chat
-        if (chatInput) {
-            chatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendChatMessage();
-                }
-            });
-        }
-        if (sendChatBtn) sendChatBtn.addEventListener('click', sendChatMessage);
-
-        // Set up event listeners for agent
-        if (agentInput) {
-            agentInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    executeAgentAction();
-                }
-            });
-        }
-        if (executeAgentBtn) executeAgentBtn.addEventListener('click', executeAgentAction);
-
-        // Set up event listeners for model selection
-        if (addModelBtn) addModelBtn.addEventListener('click', showAddModelModal);
-        if (cancelAddModel) cancelAddModel.addEventListener('click', hideAddModelModal);
-        if (confirmAddModel) confirmAddModel.addEventListener('click', addCustomModel);
-
-        // Set up event listeners for file explorer
-        if (downloadFileBtn) downloadFileBtn.addEventListener('click', downloadCurrentFile);
-        if (downloadProjectBtn) downloadProjectBtn.addEventListener('click', downloadProject);
-        if (fileList) {
-            fileList.forEach(file => {
-                file.addEventListener('click', () => {
-                    const fileType = file.classList.contains('html-file') ? 'html' : 
-                                    file.classList.contains('css-file') ? 'css' : 'js';
-                    switchTab(fileType);
-                });
-            });
-        }
-
-        // Set up event listeners for debug panel
-        if (debugToggle) debugToggle.addEventListener('click', toggleDebugPanel);
-        if (closeDebugBtn) closeDebugBtn.addEventListener('click', toggleDebugPanel);
-        if (clearLogsBtn) clearLogsBtn.addEventListener('click', clearLogs);
-
-        // Set up event listeners for export
-        if (exportHtml) exportHtml.addEventListener('click', () => exportContent('html'));
-        if (exportCss) exportCss.addEventListener('click', () => exportContent('css'));
-        if (exportJs) exportJs.addEventListener('click', () => exportContent('js'));
-        if (exportZip) exportZip.addEventListener('click', () => exportContent('zip'));
-
-        // Set up debug tabs
-        if (debugTabs) {
-            debugTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.dataset.tab;
-                    setActiveDebugTab(tabName);
-                });
-            });
-        }
-
-        // Set up close buttons for modals
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            const parentModal = btn.closest('.modal');
-            if (parentModal && parentModal.id !== 'api-key-modal') { 
-                btn.addEventListener('click', () => {
-                    if (parentModal) parentModal.classList.add('hidden');
-                });
-            }
+    });
+    executeAgentBtn.addEventListener('click', executeAgentAction);
+    
+    // Set up event listeners for model selection
+    addModelBtn.addEventListener('click', showAddModelModal);
+    cancelAddModel.addEventListener('click', hideAddModelModal);
+    confirmAddModel.addEventListener('click', addCustomModel);
+    
+    // Set up event listeners for file explorer
+    downloadFileBtn.addEventListener('click', downloadCurrentFile);
+    downloadProjectBtn.addEventListener('click', downloadProject);
+    fileList.forEach(file => {
+        file.addEventListener('click', () => {
+            const fileType = file.classList.contains('html-file') ? 'html' : 
+                            file.classList.contains('css-file') ? 'css' : 'js';
+            switchTab(fileType);
         });
+    });
+    
+    // Set up event listeners for debug panel
+    debugToggle.addEventListener('click', toggleDebugPanel);
+    closeDebugBtn.addEventListener('click', toggleDebugPanel);
+    clearLogsBtn.addEventListener('click', clearLogs);
+    
+    // Set up event listeners for export
+    exportHtml.addEventListener('click', () => exportContent('html'));
+    exportCss.addEventListener('click', () => exportContent('css'));
+    exportJs.addEventListener('click', () => exportContent('js'));
+    exportZip.addEventListener('click', () => exportContent('zip'));
+    
+    // Set up debug tabs
+    debugTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            setActiveDebugTab(tabName);
+        });
+    });
+    
+    // Set up close buttons for modals
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modal = btn.closest('.modal');
+            modal.classList.add('hidden');
+        });
+    });
 
-        // Initialize CodeMirror Editors
-        logToDebug('Initializing CodeMirror...', 'info'); 
-        try { 
-            // --- Access CodeMirror objects from the global scope --- 
-            if (typeof CodeMirror === 'undefined') {
-                throw new Error('CodeMirror base object not found. Check CDN links.');
-            }
-            if (!CodeMirror.state || !CodeMirror.view || !CodeMirror.commands || !CodeMirror.language || !CodeMirror.lang_html || !CodeMirror.lang_css || !CodeMirror.lang_javascript || !CodeMirror.theme_one_dark) {
-                 logToDebug('One or more CodeMirror modules (state, view, commands, language, lang_*, theme_*) not found on global CodeMirror object.', 'error');
-                 // Attempt to proceed but warn user
-                 alert('Error: Some CodeMirror components failed to load. Editor functionality may be limited.');
-            }
-
-            // Destructure directly from the global CodeMirror object
-            const { EditorState } = CodeMirror.state;
-            const { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, history, foldGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, highlightSelectionMatches } = CodeMirror.view;
-            const { defaultKeymap, historyKeymap, foldKeymap, completionKeymap, lintKeymap } = CodeMirror.commands;
-            const { html } = CodeMirror.lang_html;
-            const { css } = CodeMirror.lang_css;
-            const { javascript } = CodeMirror.lang_javascript;
-            const { oneDark } = CodeMirror.theme_one_dark;
-            // --- End CodeMirror object access --- 
-
-            const commonExtensions = [
-                lineNumbers(),
-                highlightActiveLineGutter(),
-                highlightSpecialChars(),
-                history(),
-                foldGutter(),
-                drawSelection(),
-                dropCursor(),
-                EditorState.allowMultipleSelections.of(true),
-                rectangularSelection(),
-                crosshairCursor(),
-                highlightActiveLine(),
-                highlightSelectionMatches(),
-                keymap.of([
-                    ...defaultKeymap,
-                    ...historyKeymap,
-                    ...foldKeymap,
-                    ...completionKeymap,
-                    ...lintKeymap
-                ]),
-                oneDark, // Apply the dark theme
-                EditorView.updateListener.of((update) => {
-                    if (update.docChanged) {
-                        debouncedUpdatePreview();
-                    }
-                })
-            ];
-
-            const debouncedUpdatePreview = debounce(updatePreview, 300);
-
-            const sampleHtml = `<!DOCTYPE html>
+    // Add sample code if editors are empty
+    if (htmlEditor.value.trim() === '') {
+        htmlEditor.value = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Web Page</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* CSS will be injected here */
+    </style>
 </head>
 <body>
     <div class="container">
@@ -534,11 +221,15 @@ function init() {
         <button id="demo-button">Click Me!</button>
     </div>
     
-    <script src="script.js"></script>
+    <script>
+        /* JavaScript will be injected here */
+    </script>
 </body>
 </html>`;
-
-            const sampleCss = `/* Sample CSS */
+    }
+    
+    if (cssEditor.value.trim() === '') {
+        cssEditor.value = `/* Sample CSS */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
@@ -583,268 +274,1124 @@ button {
 button:hover {
     background-color: #2980b9;
 }`;
-
-            const sampleJs = `// Sample JavaScript
+    }
+    
+    if (jsEditor.value.trim() === '') {
+        jsEditor.value = `// Sample JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Get the button element
     const button = document.getElementById('demo-button');
     
     // Add click event listener
-    if (button) { // Check if button exists
-        button.addEventListener('click', function() {
-            alert('Button clicked! This is the JavaScript in action.');
-        });
-    }
+    button.addEventListener('click', function() {
+        alert('Button clicked! This is the JavaScript in action.');
+    });
     
     // Log a message to the console
     console.log('JavaScript initialized successfully!');
 });`;
+    }
+    
+    // Initial preview update
+    updatePreview();
+    
+    // Log initialization
+    logToDebug('Editor initialized successfully', 'info');
+    
+    // Expose API for external use
+    exposeEditorAPI();
+    
+    // Add animation effects
+    addAnimationEffects();
+}
 
-            const htmlEditorParent = document.getElementById('html-editor-cm');
-            if (htmlEditorParent) {
-                htmlEditorView = new EditorView({
-                    state: EditorState.create({
-                        doc: sampleHtml,
-                        extensions: [ ...commonExtensions, ...(html ? [html()] : []) ] 
-                    }),
-                    parent: htmlEditorParent
-                });
-                logToDebug('HTML EditorView created.', 'info');
-            } else {
-                 logToDebug('HTML editor parent element not found!', 'error');
-            }
+/**
+ * Show the API key modal on first load
+ */
+function showApiKeyModal() {
+    apiKeyModal.classList.remove('hidden');
+    modalApiKeyInput.focus();
+}
 
-            const cssEditorParent = document.getElementById('css-editor-cm');
-             if (cssEditorParent) {
-                cssEditorView = new EditorView({
-                    state: EditorState.create({
-                        doc: sampleCss,
-                        extensions: [ ...commonExtensions, ...(css ? [css()] : []) ] 
-                    }),
-                    parent: cssEditorParent
-                });
-                logToDebug('CSS EditorView created.', 'info');
-            } else {
-                 logToDebug('CSS editor parent element not found!', 'error');
-            }
+/**
+ * Continue without an API key
+ */
+function continueWithoutKey() {
+    apiKeyModal.classList.add('hidden');
+    logToDebug('Continuing without API key. AI features will be disabled.', 'warning');
+    updateApiKeyStatus(false);
+    
+    // Make sure the modal is completely hidden
+    setTimeout(() => {
+        apiKeyModal.style.display = 'none';
+    }, 100);
+}
 
-             const jsEditorParent = document.getElementById('js-editor-cm');
-             if (jsEditorParent) {
-                jsEditorView = new EditorView({
-                    state: EditorState.create({
-                        doc: sampleJs,
-                        extensions: [ ...commonExtensions, ...(javascript ? [javascript()] : []) ] 
-                    }),
-                    parent: jsEditorParent
-                });
-                logToDebug('JS EditorView created.', 'info');
-            } else {
-                 logToDebug('JS editor parent element not found!', 'error');
-            }
-
-            updatePreview();
-
-            logToDebug('CodeMirror initialization finished.', 'info');
-
-        } catch (cmError) {
-             logToDebug(`Error during CodeMirror initialization: ${cmError.message}`, 'error');
-             console.error("CodeMirror Initialization Error:", cmError);
-             alert(`CodeMirror Error: ${cmError.message}. Editor might not work.`);
-        }
-        
-        exposeEditorAPI();
-        addAnimationEffects();
-
-        logToDebug('Application initialization complete.', 'success'); 
-
-    } catch (error) {
-        logToDebug(`Error during initialization: ${error.message}`, 'error');
-        console.error("Initialization Error:", error);
-        alert(`Initialization failed: ${error.message}`);
+/**
+ * Validate the API key format
+ * @param {Event} event - Input event
+ */
+function validateApiKey(event) {
+    const input = event.target;
+    const key = input.value.trim();
+    
+    // Basic validation - OpenRouter keys typically start with 'sk-'
+    if (key && key.startsWith('sk-') && key.length > 10) {
+        input.style.borderColor = 'var(--success-green)';
+        return true;
+    } else if (key) {
+        input.style.borderColor = 'var(--error-red)';
+        return false;
+    } else {
+        input.style.borderColor = '';
+        return false;
     }
 }
 
-// ======================================
-// Mode Switching
-// ======================================
+/**
+ * Save the API key from the main input
+ */
+function saveApiKey() {
+    const key = apiKeyInput.value.trim();
+    if (key) {
+        if (validateApiKey({ target: apiKeyInput })) {
+            apiKey = key;
+            updateApiKeyStatus(true);
+            logToDebug('API key saved successfully', 'success');
+        } else {
+            logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
+        }
+    } else {
+        apiKey = '';
+        updateApiKeyStatus(false);
+        logToDebug('API key removed', 'warning');
+    }
+}
+
+/**
+ * Save the API key from the modal
+ */
+function saveModalApiKey() {
+    const key = modalApiKeyInput.value.trim();
+    if (key) {
+        if (validateApiKey({ target: modalApiKeyInput })) {
+            apiKey = key;
+            apiKeyInput.value = key;
+            updateApiKeyStatus(true);
+            apiKeyModal.classList.add('hidden');
+            logToDebug('API key saved successfully', 'success');
+        } else {
+            logToDebug('Invalid API key format. Keys typically start with "sk-"', 'error');
+        }
+    } else {
+        continueWithoutKey();
+    }
+}
+
+/**
+ * Update the API key status indicators and enable/disable AI features
+ * @param {boolean} isValid - Whether the API key is valid
+ */
+function updateApiKeyStatus(isValid) {
+    if (isValid) {
+        apiKeyStatus.textContent = 'API Key Set';
+        apiKeyStatus.className = 'status-indicator success';
+        apiKeyDebugStatus.textContent = 'Valid';
+        apiKeyDebugStatus.className = 'success';
+        
+        // Enable AI features
+        modelSelector.disabled = false;
+        addModelBtn.disabled = false;
+        enhanceBtn.disabled = false;
+        sendChatBtn.disabled = false;
+        executeAgentBtn.disabled = false;
+    } else {
+        apiKeyStatus.textContent = 'No API Key Set';
+        apiKeyStatus.className = 'status-indicator';
+        apiKeyDebugStatus.textContent = 'Not Set';
+        apiKeyDebugStatus.className = '';
+        
+        // Disable AI features but ensure UI is still functional
+        modelSelector.disabled = true;
+        addModelBtn.disabled = true;
+        enhanceBtn.disabled = true;
+        sendChatBtn.disabled = true;
+        executeAgentBtn.disabled = true;
+        
+        // Make sure the modal is completely gone
+        apiKeyModal.classList.add('hidden');
+        apiKeyModal.style.display = 'none';
+    }
+    
+    // Ensure editor functionality works regardless of API key status
+    updatePreview();
+}
+
+/**
+ * Switch between Chat and Agent modes
+ * @param {string} mode - Mode to switch to ('chat' or 'agent')
+ */
 function switchMode(mode) {
-    if (mode === currentMode) return;
-
-    logToDebug(`Switching to ${mode} mode.`, 'info');
     currentMode = mode;
-
+    
+    // Update mode buttons
     chatModeBtn.classList.toggle('active', mode === 'chat');
     agentModeBtn.classList.toggle('active', mode === 'agent');
-
-    if (mode === 'chat') {
-        gsap.to(agentSection, { duration: 0.3, opacity: 0, onComplete: () => agentSection.classList.add('hidden') });
-        chatSection.classList.remove('hidden');
-        gsap.fromTo(chatSection, { opacity: 0 }, { duration: 0.3, opacity: 1 });
-    } else {
-        gsap.to(chatSection, { duration: 0.3, opacity: 0, onComplete: () => chatSection.classList.add('hidden') });
-        agentSection.classList.remove('hidden');
-        gsap.fromTo(agentSection, { opacity: 0 }, { duration: 0.3, opacity: 1 });
-    }
+    
+    // Update section visibility
+    chatSection.classList.toggle('hidden', mode !== 'chat');
+    agentSection.classList.toggle('hidden', mode !== 'agent');
+    
+    logToDebug(`Switched to ${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode`, 'info');
 }
 
-// ======================================
-// Editor and Preview Logic
-// ======================================
-
 /**
- * Switch between HTML, CSS, and JS editor tabs
+ * Switch between HTML, CSS, and JS tabs
+ * @param {string} tab - Tab to switch to ('html', 'css', or 'js')
  */
-function switchTab(tabType) {
-    if (tabType === currentTab) return;
-    logToDebug(`Switching to ${tabType} tab.`, 'info');
-
-    currentTab = tabType;
-
-    document.querySelectorAll('.editor-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.id === `${tabType}-tab`);
-    });
-
-    document.querySelectorAll('.code-editor').forEach(editor => {
-        editor.classList.toggle('active', editor.id === `${tabType}-editor`);
-    });
-
-    document.querySelectorAll('.file-list .file').forEach(file => {
-        file.classList.toggle('active', file.classList.contains(`${tabType}-file`));
-    });
+function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    htmlTab.classList.toggle('active', tab === 'html');
+    cssTab.classList.toggle('active', tab === 'css');
+    jsTab.classList.toggle('active', tab === 'js');
+    
+    // Update editor visibility
+    document.getElementById('html-editor').classList.toggle('active', tab === 'html');
+    document.getElementById('css-editor').classList.toggle('active', tab === 'css');
+    document.getElementById('js-editor').classList.toggle('active', tab === 'js');
+    
+    // Update file list selection
+    document.querySelector('.html-file').classList.toggle('active', tab === 'html');
+    document.querySelector('.css-file').classList.toggle('active', tab === 'css');
+    document.querySelector('.js-file').classList.toggle('active', tab === 'js');
+    
+    logToDebug(`Switched to ${tab.toUpperCase()} tab`, 'info');
 }
 
 /**
- * Update the preview iframe with current editor content
+ * Update the preview iframe with the current code
  */
 function updatePreview() {
-    logToDebug('Updating preview...', 'info');
     try {
-        const htmlCode = htmlEditorView ? htmlEditorView.state.doc.toString() : '';
-        const cssCode = cssEditorView ? cssEditorView.state.doc.toString() : '';
-        const jsCode = jsEditorView ? jsEditorView.state.doc.toString() : '';
-
-        const previewDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+        // Get the HTML, CSS, and JS code
+        const htmlCode = htmlEditor.value;
+        const cssCode = cssEditor.value;
+        const jsCode = jsEditor.value;
         
-        previewDoc.open();
-        previewDoc.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>${cssCode}</style>
-            </head>
-            <body>
-                ${htmlCode}
-                <script>${jsCode}<\/script> 
-            </body>
-            </html>
-        `);
-        previewDoc.close();
-        logToDebug('Preview updated successfully.', 'info');
+        // Create a complete HTML document
+        let previewContent = htmlCode;
+        
+        // If the HTML doesn't include style tags, inject the CSS
+        if (!previewContent.includes('</style>')) {
+            previewContent = previewContent.replace('</head>', `<style>${cssCode}</style></head>`);
+        } else {
+            // Replace the content between style tags
+            previewContent = previewContent.replace(/<style>([\s\S]*?)<\/style>/, `<style>${cssCode}</style>`);
+        }
+        
+        // If the HTML doesn't include script tags, inject the JS
+        if (!previewContent.includes('</script>')) {
+            previewContent = previewContent.replace('</body>', `<script>${jsCode}</script></body>`);
+        } else {
+            // Replace the content between script tags
+            previewContent = previewContent.replace(/<script>([\s\S]*?)<\/script>/, `<script>${jsCode}</script>`);
+        }
+        
+        // Update the iframe content
+        const iframe = previewFrame;
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        iframeDoc.open();
+        iframeDoc.write(previewContent);
+        iframeDoc.close();
+        
+        logToDebug('Preview updated', 'info');
     } catch (error) {
         logToDebug(`Error updating preview: ${error.message}`, 'error');
-        console.error("Preview Update Error:", error);
     }
 }
 
-// ======================================
-// Model Handling
-// ======================================
-function populateModelSelector() {
-    // ... existing code ...
+/**
+ * Send a chat message to the AI
+ */
+async function sendChatMessage() {
+    if (!apiKey) {
+        logToDebug('API key is required to use chat', 'error');
+        return;
+    }
+    
+    const message = chatInput.value.trim();
+    if (!message) {
+        return;
+    }
+    
+    // Add user message to chat
+    addMessageToChat('user', message);
+    
+    // Clear input
+    chatInput.value = '';
+    
+    // Get current code context
+    const codeContext = {
+        html: htmlEditor.value,
+        css: cssEditor.value,
+        js: jsEditor.value
+    };
+    
+    // Disable send button
+    sendChatBtn.disabled = true;
+    
+    try {
+        // Show typing indicator
+        addTypingIndicator();
+        
+        const selectedModel = modelSelector.value;
+        const modelName = modelSelector.options[modelSelector.selectedIndex].text;
+        
+        logToDebug(`Sending chat message to ${modelName}`, 'info');
+        
+        const startTime = Date.now();
+        
+        // Prepare the API request
+        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'Advanced Web IDE'
+            },
+            body: JSON.stringify({
+                model: selectedModel,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a helpful web development assistant in a code editor environment. The user is working on a web project with HTML, CSS, and JavaScript. 
+                        
+Current code context:
+HTML: ${codeContext.html.length > 500 ? codeContext.html.substring(0, 500) + '...' : codeContext.html}
+CSS: ${codeContext.css.length > 500 ? codeContext.css.substring(0, 500) + '...' : codeContext.css}
+JS: ${codeContext.js.length > 500 ? codeContext.js.substring(0, 500) + '...' : codeContext.js}
+
+Provide helpful advice, answer questions, and suggest improvements. You can provide code snippets when relevant. This is Chat Mode, so you should not directly modify the user's code - instead, explain concepts and provide examples that the user can implement themselves.`
+                    },
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Remove typing indicator
+        removeTypingIndicator();
+        
+        const data = await response.json();
+        const aiResponse = data.choices[0].message.content;
+        
+        // Add AI response to chat
+        addMessageToChat('ai', aiResponse);
+        
+        // Update stats
+        const responseTime = Date.now() - startTime;
+        updateApiStats(selectedModel, modelName, responseTime);
+        
+        logToDebug(`Received chat response in ${responseTime}ms`, 'success');
+    } catch (error) {
+        // Remove typing indicator
+        removeTypingIndicator();
+        
+        logToDebug(`Error in chat: ${error.message}`, 'error');
+        addMessageToChat('system', `Error: ${error.message}`);
+    } finally {
+        // Re-enable send button
+        sendChatBtn.disabled = apiKey ? false : true;
+    }
 }
 
+/**
+ * Add a message to the chat
+ * @param {string} role - Role of the message sender ('user', 'ai', or 'system')
+ * @param {string} content - Content of the message
+ */
+function addMessageToChat(role, content) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}-message`;
+    
+    // Format code blocks in the content
+    content = formatCodeBlocks(content);
+    
+    if (role === 'system') {
+        messageDiv.innerHTML = `
+            <div class="message-content">${content}</div>
+        `;
+    } else {
+        const avatar = role === 'user' ? 
+            '<div class="message-avatar"><i class="fas fa-user"></i></div>' : 
+            '<div class="message-avatar"><i class="fas fa-robot"></i></div>';
+        
+        messageDiv.innerHTML = `
+            ${avatar}
+            <div class="message-content">${content}</div>
+        `;
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Apply syntax highlighting to code blocks
+    if (window.Prism) {
+        Prism.highlightAllUnder(messageDiv);
+    }
+}
+
+/**
+ * Format code blocks in message content
+ * @param {string} content - Message content
+ * @returns {string} Formatted content with HTML code blocks
+ */
+function formatCodeBlocks(content) {
+    // Replace ```language\ncode``` with <pre><code class="language-*">code</code></pre>
+    content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
+        const lang = language || 'plaintext';
+        return `<pre><code class="language-${lang}">${escapeHtml(code)}</code></pre>`;
+    });
+    
+    // Replace inline `code` with <code>code</code>
+    content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    return content;
+}
+
+/**
+ * Escape HTML special characters
+ * @param {string} html - HTML string to escape
+ * @returns {string} Escaped HTML string
+ */
+function escapeHtml(html) {
+    const div = document.createElement('div');
+    div.textContent = html;
+    return div.innerHTML;
+}
+
+/**
+ * Add typing indicator to chat
+ */
+function addTypingIndicator() {
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai-message typing-indicator';
+    typingDiv.innerHTML = `
+        <div class="message-avatar"><i class="fas fa-robot"></i></div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    typingDiv.id = 'typing-indicator';
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Remove typing indicator from chat
+ */
+function removeTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+/**
+ * Execute agent action to modify code
+ */
+async function executeAgentAction() {
+    if (!apiKey) {
+        logToDebug('API key is required to use agent mode', 'error');
+        return;
+    }
+    
+    const instruction = agentInput.value.trim();
+    if (!instruction) {
+        return;
+    }
+    
+    // Get target files
+    const target = agentTarget.value;
+    
+    // Get current code
+    const codeContext = {
+        html: htmlEditor.value,
+        css: cssEditor.value,
+        js: jsEditor.value
+    };
+    
+    // Disable execute button
+    executeAgentBtn.disabled = true;
+    agentInput.disabled = true;
+    
+    try {
+        // Show loading state
+        agentInput.classList.add('loading');
+        
+        const selectedModel = modelSelector.value;
+        const modelName = modelSelector.options[modelSelector.selectedIndex].text;
+        
+        logToDebug(`Executing agent action with ${modelName}`, 'info');
+        
+        const startTime = Date.now();
+        
+        // Prepare the API request
+        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'Advanced Web IDE'
+            },
+            body: JSON.stringify({
+                model: selectedModel,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are an AI agent that directly modifies code in a web development environment. The user will provide instructions, and you should return the modified code files based on those instructions.
+
+Current code:
+${target === 'all' || target === 'html' ? `HTML:\n${codeContext.html}\n\n` : ''}
+${target === 'all' || target === 'css' ? `CSS:\n${codeContext.css}\n\n` : ''}
+${target === 'all' || target === 'js' ? `JavaScript:\n${codeContext.js}\n\n` : ''}
+
+Instructions:
+1. Analyze the user's request and the current code
+2. Make the requested changes to the code
+3. Return ONLY the complete modified code files with no explanations
+4. Use the following format for your response:
+
+\`\`\`html
+[Complete HTML code here]
+\`\`\`
+
+\`\`\`css
+[Complete CSS code here]
+\`\`\`
+
+\`\`\`javascript
+[Complete JavaScript code here]
+\`\`\`
+
+Only include the code blocks for files that you've modified. If you haven't changed a file, don't include it in your response.`
+                    },
+                    {
+                        role: 'user',
+                        content: instruction
+                    }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const agentResponse = data.choices[0].message.content;
+        
+        // Extract code from response
+        const htmlMatch = agentResponse.match(/```html\n([\s\S]*?)```/);
+        const cssMatch = agentResponse.match(/```css\n([\s\S]*?)```/);
+        const jsMatch = agentResponse.match(/```javascript\n([\s\S]*?)```/) || agentResponse.match(/```js\n([\s\S]*?)```/);
+        
+        // Update code editors with extracted code
+        if (htmlMatch && (target === 'all' || target === 'html')) {
+            htmlEditor.value = htmlMatch[1];
+            logToDebug('HTML code updated by agent', 'success');
+        }
+        
+        if (cssMatch && (target === 'all' || target === 'css')) {
+            cssEditor.value = cssMatch[1];
+            logToDebug('CSS code updated by agent', 'success');
+        }
+        
+        if (jsMatch && (target === 'all' || target === 'js')) {
+            jsEditor.value = jsMatch[1];
+            logToDebug('JavaScript code updated by agent', 'success');
+        }
+        
+        // Update preview
+        updatePreview();
+        
+        // Update stats
+        const responseTime = Date.now() - startTime;
+        updateApiStats(selectedModel, modelName, responseTime);
+        
+        logToDebug(`Agent action completed in ${responseTime}ms`, 'success');
+        
+        // Clear agent input
+        agentInput.value = '';
+    } catch (error) {
+        logToDebug(`Error in agent action: ${error.message}`, 'error');
+    } finally {
+        // Re-enable execute button
+        executeAgentBtn.disabled = apiKey ? false : true;
+        agentInput.disabled = false;
+        agentInput.classList.remove('loading');
+    }
+}
+
+/**
+ * Enhance code using OpenRouter API
+ */
+async function enhanceCode() {
+    if (!apiKey) {
+        logToDebug('API key is required to enhance code', 'error');
+        return;
+    }
+    
+    if (isStreaming) {
+        logToDebug('Already processing a request. Please wait.', 'warning');
+        return;
+    }
+    
+    // Determine which code to enhance based on current tab
+    let codeToEnhance = '';
+    let editorToUpdate = null;
+    let codeType = '';
+    
+    switch (currentTab) {
+        case 'html':
+            codeToEnhance = htmlEditor.value.trim();
+            editorToUpdate = htmlEditor;
+            codeType = 'HTML';
+            break;
+        case 'css':
+            codeToEnhance = cssEditor.value.trim();
+            editorToUpdate = cssEditor;
+            codeType = 'CSS';
+            break;
+        case 'js':
+            codeToEnhance = jsEditor.value.trim();
+            editorToUpdate = jsEditor;
+            codeType = 'JavaScript';
+            break;
+    }
+    
+    if (!codeToEnhance) {
+        logToDebug(`Please enter some ${codeType} code to enhance.`, 'warning');
+        return;
+    }
+    
+    const selectedModel = modelSelector.value;
+    const modelName = modelSelector.options[modelSelector.selectedIndex].text;
+    
+    try {
+        isStreaming = true;
+        enhanceBtn.disabled = true;
+        enhanceBtn.classList.add('loading');
+        
+        logToDebug(`Enhancing ${codeType} code with model: ${modelName}`, 'info');
+        
+        const startTime = Date.now();
+        
+        // Prepare the API request
+        const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'Advanced Web IDE'
+            },
+            body: JSON.stringify({
+                model: selectedModel,
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a helpful web development assistant. Enhance the user's ${codeType} code by improving readability, performance, and best practices. Maintain the original functionality and structure. Return only the enhanced code without explanations or additional comments.`
+                    },
+                    {
+                        role: 'user',
+                        content: codeToEnhance
+                    }
+                ],
+                stream: true
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Handle streaming response
+        const reader = response.body.getReader();
+        let enhancedCode = '';
+        
+        // Clear the editor for streaming effect
+        editorToUpdate.value = '';
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // Process the chunk
+            const chunk = new TextDecoder().decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const data = JSON.parse(line.substring(6));
+                        if (data.choices && data.choices[0].delta.content) {
+                            const content = data.choices[0].delta.content;
+                            enhancedCode += content;
+                            editorToUpdate.value += content;
+                        }
+                    } catch (e) {
+                        // Skip invalid JSON
+                    }
+                }
+            }
+        }
+        
+        // Update preview after enhancement
+        updatePreview();
+        
+        // Update stats
+        const responseTime = Date.now() - startTime;
+        updateApiStats(selectedModel, modelName, responseTime);
+        
+        logToDebug(`${codeType} enhancement completed in ${responseTime}ms`, 'success');
+    } catch (error) {
+        logToDebug(`Error enhancing ${codeType} code: ${error.message}`, 'error');
+        
+        // Show error in editor if it's empty (API failed before streaming)
+        if (editorToUpdate.value === '') {
+            editorToUpdate.value = codeToEnhance;
+        }
+    } finally {
+        isStreaming = false;
+        enhanceBtn.disabled = apiKey ? false : true;
+        enhanceBtn.classList.remove('loading');
+    }
+}
+
+/**
+ * Update API usage statistics
+ * @param {string} modelId - ID of the model used
+ * @param {string} modelName - Display name of the model
+ * @param {number} responseTime - Response time in milliseconds
+ */
+function updateApiStats(modelId, modelName, responseTime) {
+    apiStats.requestCount++;
+    apiStats.lastModel = modelName;
+    apiStats.lastResponseTime = responseTime;
+    
+    // Update UI
+    requestCountEl.textContent = apiStats.requestCount;
+    currentModel.textContent = apiStats.lastModel;
+    lastResponseTimeEl.textContent = `${apiStats.lastResponseTime}ms`;
+    
+    // Add to network log
+    const networkItem = document.createElement('div');
+    networkItem.className = 'network-item';
+    networkItem.innerHTML = `
+        <div><strong>${modelName}</strong> - ${new Date().toLocaleTimeString()}</div>
+        <div>${responseTime}ms</div>
+    `;
+    debugNetwork.insertBefore(networkItem, debugNetwork.firstChild);
+}
+
+/**
+ * Show the add model modal
+ */
 function showAddModelModal() {
-    // ... existing code ...
+    addModelModal.classList.remove('hidden');
+    newModelId.focus();
 }
 
+/**
+ * Hide the add model modal
+ */
 function hideAddModelModal() {
-    // ... existing code ...
+    addModelModal.classList.add('hidden');
+    newModelId.value = '';
+    newModelName.value = '';
 }
 
+/**
+ * Add a custom model to the dropdown
+ */
 function addCustomModel() {
-    // ... existing code ...
+    const modelId = newModelId.value.trim();
+    const modelName = newModelName.value.trim();
+    
+    if (!modelId || !modelName) {
+        logToDebug('Please enter both model ID and display name', 'warning');
+        return;
+    }
+    
+    // Add to models array
+    models.push({ id: modelId, name: modelName });
+    
+    // Add to dropdown
+    const option = document.createElement('option');
+    option.value = modelId;
+    option.textContent = modelName;
+    modelSelector.appendChild(option);
+    
+    // Select the new model
+    modelSelector.value = modelId;
+    
+    logToDebug(`Added custom model: ${modelName} (${modelId})`, 'success');
+    hideAddModelModal();
 }
 
-// ======================================
-// Chat Functionality
-// ======================================
-function sendChatMessage() {
-    // ... existing code ...
-}
-
-// ======================================
-// Agent Functionality
-// ======================================
-function executeAgentAction() {
-    // ... existing code ...
-}
-
-// ======================================
-// OpenRouter API Call
-// ======================================
-async function callOpenRouterAPI(prompt, mode = 'chat') {
-    // ... existing code ...
-}
-
-// ======================================
-// Debug Panel Logic
-// ======================================
+/**
+ * Toggle the debug panel
+ */
 function toggleDebugPanel() {
-    // ... existing code ...
+    debugPanel.classList.toggle('hidden');
+    if (!debugPanel.classList.contains('hidden')) {
+        logToDebug('Debug panel opened', 'info');
+    }
 }
 
+/**
+ * Set active debug tab
+ * @param {string} tabName - Name of the tab to activate
+ */
 function setActiveDebugTab(tabName) {
-    // ... existing code ...
+    // Update tab buttons
+    debugTabs.forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Update tab content
+    document.querySelectorAll('.debug-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    document.getElementById(`debug-${tabName}`).classList.add('active');
 }
 
+/**
+ * Log a message to the debug panel
+ * @param {string} message - Message to log
+ * @param {string} level - Log level ('info', 'warning', 'error', 'success')
+ */
+function logToDebug(message, level = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = document.createElement('div');
+    logEntry.className = `log-entry log-${level}`;
+    logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-level">[${level.toUpperCase()}]</span> ${message}`;
+    
+    debugLogs.insertBefore(logEntry, debugLogs.firstChild);
+    
+    // Also log to console
+    console.log(`[${level.toUpperCase()}] ${message}`);
+}
+
+/**
+ * Clear debug logs
+ */
 function clearLogs() {
-    // ... existing code ...
+    debugLogs.innerHTML = '<div class="log-entry">Debug logs cleared...</div>';
+    logToDebug('Logs cleared', 'info');
 }
 
-function updateDebugStats() {
-    // ... existing code ...
-}
-
-// ======================================
-// Export Functionality
-// ======================================
-function exportContent(type) {
-    // ... existing code ...
-}
-
-function downloadFile(filename, content, mimeType) {
-    // ... existing code ...
-}
-
-// ======================================
-// File Explorer Logic
-// ======================================
+/**
+ * Download the current file
+ */
 function downloadCurrentFile() {
-    // ... existing code ...
+    let filename = '';
+    let content = '';
+    let contentType = '';
+    
+    switch (currentTab) {
+        case 'html':
+            filename = 'index.html';
+            content = htmlEditor.value;
+            contentType = 'text/html';
+            break;
+        case 'css':
+            filename = 'styles.css';
+            content = cssEditor.value;
+            contentType = 'text/css';
+            break;
+        case 'js':
+            filename = 'script.js';
+            content = jsEditor.value;
+            contentType = 'text/javascript';
+            break;
+    }
+    
+    downloadFile(filename, content, contentType);
+    logToDebug(`Downloaded ${filename}`, 'info');
 }
 
+/**
+ * Download the entire project as a ZIP file
+ */
 function downloadProject() {
-    // ... existing code ...
+    try {
+        // Create a new JSZip instance
+        const zip = new JSZip();
+        
+        // Add files to the zip
+        zip.file('index.html', htmlEditor.value);
+        zip.file('styles.css', cssEditor.value);
+        zip.file('script.js', jsEditor.value);
+        
+        // Generate the zip file
+        zip.generateAsync({ type: 'blob' })
+            .then(function(content) {
+                // Download the zip file
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'web-project.zip';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                logToDebug('Project downloaded as ZIP', 'success');
+            });
+    } catch (error) {
+        logToDebug(`Error downloading project: ${error.message}`, 'error');
+    }
 }
 
-// ======================================
-// Animation Effects
-// ======================================
+/**
+ * Export content in various formats
+ * @param {string} format - Export format ('html', 'css', 'js', or 'zip')
+ */
+function exportContent(format) {
+    const htmlContent = htmlEditor.value;
+    const cssContent = cssEditor.value;
+    const jsContent = jsEditor.value;
+    const filename = `web-project-${new Date().toISOString().slice(0, 10)}`;
+    
+    switch (format) {
+        case 'html':
+            downloadFile(`${filename}.html`, htmlContent, 'text/html');
+            logToDebug('HTML code exported', 'info');
+            break;
+            
+        case 'css':
+            downloadFile(`${filename}.css`, cssContent, 'text/css');
+            logToDebug('CSS code exported', 'info');
+            break;
+            
+        case 'js':
+            downloadFile(`${filename}.js`, jsContent, 'text/javascript');
+            logToDebug('JavaScript code exported', 'info');
+            break;
+            
+        case 'zip':
+            downloadProject();
+            break;
+    }
+}
+
+/**
+ * Download a file
+ * @param {string} filename - Name of the file
+ * @param {string} content - Content of the file
+ * @param {string} contentType - MIME type of the file
+ */
+function downloadFile(filename, content, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Fetch with retry logic for transient errors
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @param {number} retries - Number of retries
+ * @returns {Promise<Response>} Fetch response
+ */
+async function fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            
+            if (response.ok) return response;
+            
+            if (response.status === 401) {
+                logToDebug('API Key is invalid or missing. Please check your OpenRouter account.', 'error');
+                throw new Error('Authentication failed (401)');
+            } else if (response.status === 429) {
+                const retryAfter = response.headers.get('Retry-After') || 1;
+                logToDebug(`Rate limit exceeded. Retrying in ${retryAfter}s...`, 'warning');
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                continue;
+            } else {
+                const errorText = await response.text();
+                throw new Error(`API error (${response.status}): ${errorText}`);
+            }
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            logToDebug(`Fetch attempt ${i + 1} failed: ${error.message}. Retrying...`, 'warning');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+    throw new Error('Max retries reached');
+}
+
+/**
+ * Debounce function to limit the rate of function calls
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Wait time in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+/**
+ * Add animation effects using GSAP
+ */
 function addAnimationEffects() {
-    // ... existing code ...
+    if (window.gsap) {
+        // Animate header
+        gsap.from('header', { 
+            y: -50, 
+            opacity: 0, 
+            duration: 1, 
+            ease: 'power3.out' 
+        });
+        
+        // Animate panes
+        gsap.from('.pane', { 
+            y: 50, 
+            opacity: 0, 
+            duration: 1, 
+            stagger: 0.2, 
+            ease: 'back.out(1.7)' 
+        });
+        
+        // Animate buttons
+        gsap.from('.neon-btn', { 
+            scale: 0.8, 
+            opacity: 0, 
+            duration: 0.5, 
+            stagger: 0.1, 
+            ease: 'power2.out',
+            delay: 0.5
+        });
+        
+        // Add hover animations for buttons
+        document.querySelectorAll('.neon-btn').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                gsap.to(btn, { 
+                    scale: 1.05, 
+                    duration: 0.2, 
+                    ease: 'power1.out' 
+                });
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(btn, { 
+                    scale: 1, 
+                    duration: 0.2, 
+                    ease: 'power1.in' 
+                });
+            });
+        });
+    }
 }
 
-// ======================================
-// Expose Editor API (Optional)
-// ======================================
+/**
+ * Expose Editor API for external use
+ */
 function exposeEditorAPI() {
-    // ... existing code ...
+    window.EditorAPI = {
+        // Get editor content
+        getHTML: () => htmlEditor.value,
+        getCSS: () => cssEditor.value,
+        getJS: () => jsEditor.value,
+        
+        // Set editor content
+        setHTML: (content) => {
+            htmlEditor.value = content;
+            updatePreview();
+        },
+        setCSS: (content) => {
+            cssEditor.value = content;
+            updatePreview();
+        },
+        setJS: (content) => {
+            jsEditor.value = content;
+            updatePreview();
+        },
+        
+        // Switch tabs
+        switchTab: switchTab,
+        
+        // Switch modes
+        switchMode: switchMode,
+        
+        // API key management
+        setApiKey: (key) => {
+            apiKey = key;
+            apiKeyInput.value = key;
+            updateApiKeyStatus(true);
+        },
+        
+        // Chat and agent functions
+        sendChatMessage: (message) => {
+            chatInput.value = message;
+            sendChatMessage();
+        },
+        executeAgentAction: (instruction) => {
+            agentInput.value = instruction;
+            executeAgentAction();
+        },
+        
+        // Enhance code
+        enhance: enhanceCode,
+        
+        // Export content
+        export: exportContent,
+        
+        // Add custom model
+        addModel: (id, name) => {
+            models.push({ id, name });
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            modelSelector.appendChild(option);
+        }
+    };
+    
+    logToDebug('Editor API exposed as window.EditorAPI', 'info');
 }
 
-// ======================================
-// Initialization Trigger
-// ======================================
-window.onload = init;
+// Initialize the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
 
 // Add CSS for typing indicator
 const style = document.createElement('style');

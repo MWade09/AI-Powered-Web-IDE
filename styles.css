@@ -298,43 +298,6 @@ main {
   flex: 1;
 }
 
-/* Mode Panes Container */
-.mode-panes {
-  display: flex;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-}
-
-/* Chat Section */
-.chat-section {
-  height: 30vh;
-  min-height: 200px;
-  background: var(--surface-primary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-/* Agent Section */
-.agent-section {
-  height: 30vh;
-  min-height: 200px;
-  background: var(--surface-primary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
 /* Chat Section */
 .chat-section {
   height: 30vh;
@@ -525,20 +488,24 @@ main {
 
 /* File Explorer */
 .file-explorer {
-  position: relative;
-  top: auto;
-  right: auto;
-  width: 100%;
+  position: absolute;
+  top: 0;
+  right: -250px;
+  width: 230px;
+  height: 100%;
   background: var(--surface-secondary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
   overflow: hidden;
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all var(--transition-normal);
-  z-index: 5;
-  margin-bottom: var(--spacing-lg);
-  max-height: 300px;
+  border-right: none;
+  transition: right var(--transition-normal);
+  z-index: 10;
+}
+
+.container:hover .file-explorer {
+  right: 0;
 }
 
 .file-explorer-header {
@@ -604,7 +571,7 @@ button {
 }
 
 .neon-btn {
-  background: rgba(0, 0, 0, 0.4); /* Increased alpha from 0.3 to 0.4 */
+  background: rgba(0, 0, 0, 0.3);
   color: var(--text-primary);
   border: 1px solid var(--accent-pink);
   border-radius: var(--radius-md);
@@ -617,23 +584,13 @@ button {
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
-  justify-content: center; /* Added for better alignment */
   gap: var(--spacing-xs);
-  min-width: 100px; /* Added for more consistent button sizes */
-  position: relative; /* Added to support visual feedback */
 }
 
 .neon-btn:hover, .neon-btn:focus {
   background: rgba(236, 72, 153, 0.2);
   box-shadow: var(--border-glow);
   transform: translateY(-2px);
-  color: var(--accent-white); /* Added for better contrast */
-}
-
-.neon-btn:active {
-  transform: translateY(1px); /* Added feedback for button press */
-  box-shadow: 0 0 3px rgba(236, 72, 153, 0.3); /* Reduced glow on active state */
-  transition-duration: 0.1s; /* Faster transition for active state */
 }
 
 .neon-btn.primary {
@@ -643,13 +600,6 @@ button {
 
 .neon-btn.primary:hover, .neon-btn.primary:focus {
   background: #f472b6;
-  color: #000000; /* Keep text dark on light background */
-  box-shadow: 0 0 15px rgba(236, 72, 153, 0.8); /* Enhanced glow */
-}
-
-.neon-btn.primary:active {
-  background: #ec4899; /* Original color on active state */
-  box-shadow: 0 0 5px rgba(236, 72, 153, 0.5); /* Reduced glow */
 }
 
 .neon-btn.highlight-btn {
@@ -661,111 +611,44 @@ button {
 
 .neon-btn.highlight-btn:hover, .neon-btn.highlight-btn:focus {
   background: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8); /* Enhanced green glow */
 }
 
-.neon-btn.highlight-btn:active {
-  background: rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); /* Reduced glow */
+.skip-notice {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-green);
 }
 
 .neon-btn.small {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 0.8rem;
-  min-width: 60px; /* Smaller min-width for small buttons */
 }
 
 .neon-btn:disabled {
-  opacity: 0.6; /* Increased from 0.5 */
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important; /* Prevent hover transform on disabled */
-  box-shadow: none !important; /* Prevent glow on disabled */
-}
-
-/* Added click feedback ripple effect */
-.neon-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.7);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%, -50%);
-  transform-origin: 50% 50%;
-}
-
-.neon-btn:active::after {
-  animation: ripple 0.6s ease-out;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0, 0) translate(-50%, -50%);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(20, 20) translate(-50%, -50%);
-    opacity: 0;
-  }
-}
-
-/* Ensure specific buttons are visible */
-#save-api-key,
-#export-btn {
-  visibility: visible;
-  opacity: 1;
+  transform: none;
+  box-shadow: none;
 }
 
 .icon-btn {
-  background: rgba(255, 255, 255, 0.05); /* Added subtle background */
+  background: transparent;
   color: var(--text-secondary);
   border: none;
   width: 32px;
   height: 32px;
-  min-width: 32px; /* Ensure minimum size */
-  min-height: 32px; /* Ensure minimum size */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
-  position: relative; /* Added for ripple effect */
-  overflow: hidden; /* Contain ripple effect */
-  visibility: visible; /* Ensure visibility */
-  opacity: 1; /* Ensure full opacity */
 }
 
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
-  transform: scale(1.1); /* Added subtle scale effect */
-}
-
-.icon-btn:active {
-  transform: scale(0.95);
-  transition-duration: 0.1s;
-}
-
-/* Ripple effect for icon buttons */
-.icon-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.7);
-  opacity: 0;
-  border-radius: 100%;
-  transform: scale(1, 1) translate(-50%, -50%);
-  transform-origin: 50% 50%;
-}
-
-.icon-btn:active::after {
-  animation: ripple 0.6s ease-out;
 }
 
 /* Form Elements */
@@ -805,7 +688,6 @@ select:disabled, input:disabled {
 /* Export Dropdown */
 .export-dropdown {
   position: relative;
-  z-index: 25; /* Added z-index to the parent container */
 }
 
 .export-options {
@@ -819,7 +701,7 @@ select:disabled, input:disabled {
   display: none;
   flex-direction: column;
   gap: var(--spacing-xs);
-  z-index: 20; /* Keep this z-index for children, parent now controls stacking */
+  z-index: 10;
   min-width: 180px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1008,8 +890,6 @@ select:disabled, input:disabled {
   padding: var(--spacing-md);
   background: rgba(0, 0, 0, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  visibility: visible; /* Ensure visibility */
-  opacity: 1; /* Ensure full opacity */
 }
 
 .info-text {
@@ -1095,6 +975,10 @@ select:disabled, input:disabled {
   .tab-controls {
     overflow-x: auto;
     padding-bottom: var(--spacing-xs);
+  }
+  
+  .file-explorer {
+    display: none;
   }
 }
 

@@ -12,18 +12,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CodeMirror 6 CDN Links (Reverted to standard scripts) -->
-    <script src="https://unpkg.com/@codemirror/state@6.4.1/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/view@6.26.3/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/commands@6.5.0/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/language@6.10.1/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/lang-html@6.4.9/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/lang-css@6.2.1/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/lang-javascript@6.2.2/dist/index.js"></script>
-    <script src="https://unpkg.com/@codemirror/theme-one-dark@6.1.2/dist/index.js"></script>
-    <!-- End CodeMirror Links -->
-    
 </head>
 <body>
     <div class="container">
@@ -93,7 +81,88 @@
         </header>
         
         <main>
-            <!-- File Explorer Section - Moved to the top of the main content -->
+            <!-- IDE Section -->
+            <div id="ide-section" class="ide-section">
+                <div class="tab-controls">
+                    <button id="html-tab" class="editor-tab active">
+                        <i class="fab fa-html5"></i> HTML
+                    </button>
+                    <button id="css-tab" class="editor-tab">
+                        <i class="fab fa-css3-alt"></i> CSS
+                    </button>
+                    <button id="js-tab" class="editor-tab">
+                        <i class="fab fa-js"></i> JavaScript
+                    </button>
+                </div>
+                
+                <div class="editor-container">
+                    <div class="pane editor-pane">
+                        <div id="html-editor" class="code-editor active">
+                            <textarea id="html-code" placeholder="Enter your HTML code here..."></textarea>
+                        </div>
+                        <div id="css-editor" class="code-editor">
+                            <textarea id="css-code" placeholder="Enter your CSS code here..."></textarea>
+                        </div>
+                        <div id="js-editor" class="code-editor">
+                            <textarea id="js-code" placeholder="Enter your JavaScript code here..."></textarea>
+                        </div>
+                    </div>
+                    <div class="pane preview-pane">
+                        <div class="preview-header">
+                            <span>Live Preview</span>
+                            <button id="refresh-preview" class="icon-btn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <iframe id="preview-frame" title="Preview"></iframe>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Section -->
+            <div id="chat-section" class="chat-section">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="system-message">
+                            <div class="message-content">
+                                Welcome to Chat Mode! Here you can discuss your code, ask questions, and get suggestions from the AI without directly modifying your code. When you're ready for direct code changes, switch to Agent Mode.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea id="chat-input" placeholder="Ask the AI about your code or request suggestions..."></textarea>
+                        <button id="send-chat" class="neon-btn primary" disabled>
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agent Mode Section (Hidden by default) -->
+            <div id="agent-section" class="agent-section hidden">
+                <div class="agent-container">
+                    <div class="agent-header">
+                        <h3>Agent Mode: Direct Code Modification</h3>
+                        <p>Describe what changes you want the AI to make to your code.</p>
+                    </div>
+                    <div class="agent-input-container">
+                        <textarea id="agent-input" placeholder="Describe the code changes you want (e.g., 'Add a responsive navigation menu to the HTML')"></textarea>
+                        <div class="agent-options">
+                            <select id="agent-target">
+                                <option value="all">All Files</option>
+                                <option value="html">HTML Only</option>
+                                <option value="css">CSS Only</option>
+                                <option value="js">JavaScript Only</option>
+                            </select>
+                            <button id="execute-agent" class="neon-btn primary" disabled>
+                                <i class="fas fa-robot"></i> Execute Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Explorer Section -->
             <div class="file-explorer">
                 <div class="file-explorer-header">
                     <h3>Project Files</h3>
@@ -115,90 +184,6 @@
                     </div>
                     <div class="file js-file">
                         <i class="fab fa-js"></i> script.js
-                    </div>
-                </div>
-            </div>
-            
-            <!-- IDE Section -->
-            <div id="ide-section" class="ide-section">
-                <div class="tab-controls">
-                    <button id="html-tab" class="editor-tab active">
-                        <i class="fab fa-html5"></i> HTML
-                    </button>
-                    <button id="css-tab" class="editor-tab">
-                        <i class="fab fa-css3-alt"></i> CSS
-                    </button>
-                    <button id="js-tab" class="editor-tab">
-                        <i class="fab fa-js"></i> JavaScript
-                    </button>
-                </div>
-                
-                <div class="editor-container">
-                    <div class="pane editor-pane">
-                        <div id="html-editor" class="code-editor active">
-                            <div id="html-editor-cm"></div> <!-- CodeMirror container -->
-                        </div>
-                        <div id="css-editor" class="code-editor">
-                            <div id="css-editor-cm"></div> <!-- CodeMirror container -->
-                        </div>
-                        <div id="js-editor" class="code-editor">
-                            <div id="js-editor-cm"></div> <!-- CodeMirror container -->
-                        </div>
-                    </div>
-                    <div class="pane preview-pane">
-                        <div class="preview-header">
-                            <span>Live Preview</span>
-                            <button id="refresh-preview" class="icon-btn">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                        </div>
-                        <iframe id="preview-frame" title="Preview"></iframe>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Dual Pane for Chat and Agent Modes -->
-            <div class="mode-panes">
-                <!-- Chat Section -->
-                <div id="chat-section" class="chat-section">
-                    <div class="chat-container">
-                        <div class="chat-messages" id="chat-messages">
-                            <div class="system-message">
-                                <div class="message-content">
-                                    Welcome to Chat Mode! Here you can discuss your code, ask questions, and get suggestions from the AI without directly modifying your code. When you're ready for direct code changes, switch to Agent Mode.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chat-input-container">
-                            <textarea id="chat-input" placeholder="Ask the AI about your code or request suggestions..."></textarea>
-                            <button id="send-chat" class="neon-btn primary" disabled>
-                                <i class="fas fa-paper-plane"></i> Send
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Agent Mode Section -->
-                <div id="agent-section" class="agent-section">
-                    <div class="agent-container">
-                        <div class="agent-header">
-                            <h3>Agent Mode: Direct Code Modification</h3>
-                            <p>Describe what changes you want the AI to make to your code.</p>
-                        </div>
-                        <div class="agent-input-container">
-                            <textarea id="agent-input" placeholder="Describe the code changes you want (e.g., 'Add a responsive navigation menu to the HTML')"></textarea>
-                            <div class="agent-options">
-                                <select id="agent-target">
-                                    <option value="all">All Files</option>
-                                    <option value="html">HTML Only</option>
-                                    <option value="css">CSS Only</option>
-                                    <option value="js">JavaScript Only</option>
-                                </select>
-                                <button id="execute-agent" class="neon-btn primary" disabled>
-                                    <i class="fas fa-robot"></i> Execute Changes
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -311,7 +296,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <!-- Main scripts -->
-    <script src="api-key-info.js"></script> 
-    <script src="script.js"></script> <!-- Removed type="module" -->
+    <script src="api-key-info.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
